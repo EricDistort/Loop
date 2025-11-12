@@ -1,45 +1,182 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { StatusBar, Image, View } from 'react-native';
 import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+  scale as s,
+  verticalScale as vs,
+  moderateScale as ms,
+} from 'react-native-size-matters';
+import { UserProvider } from './utils/UserContext';
+import LinearGradient from 'react-native-linear-gradient';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
 
+// Screens
+import LoginScreen from './screens/LoginScreen';
+import StoreScreen from './screens/Store/StoreScreen';
+import CartScreen from './screens/Store/CartScreen';
+import ProfileScreen from './screens/Profile/ProfileScreen';
+import OrderScreen from './screens/Order/OrderScreen';
+import OrderDetailScreen from './screens/Order/OrderDetailesScreen';
+
+
+const RootStack = createNativeStackNavigator();
+const StoreStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
+const OrderStack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+function StoreStackScreen() {
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
+    <StoreStack.Navigator screenOptions={{ headerShown: false }}>
+      <StoreStack.Screen name="StoreMain" component={StoreScreen} />
+      <StoreStack.Screen name="Cart" component={CartScreen} />
+    </StoreStack.Navigator>
   );
 }
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
+function ProfileStackScreen() {
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
+    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+      <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
+      {/* Add more Profile-related screens here later */}
+    </ProfileStack.Navigator>
+  );
+}
+
+function OrderStackScreen() {
+  return (
+    <OrderStack.Navigator screenOptions={{ headerShown: false }}>
+      <OrderStack.Screen name="OrderMain" component={OrderScreen} />
+      <OrderStack.Screen name="OrderDetail" component={OrderDetailScreen} />
+    </OrderStack.Navigator>
+  );
+}
+
+function MainTabs() {
+  return (
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        initialRouteName="Store"
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            position: 'absolute',
+            bottom: vs(16),
+            left: 0,
+            right: 0,
+            height: vs(65),
+            backgroundColor: 'rgba(0, 0, 0, 1)',
+            borderRadius: ms(35),
+            borderWidth: ms(2),
+            borderColor: 'transparent',
+            overflow: 'hidden',
+            elevation: 5,
+            marginHorizontal: '5%',
+            paddingBottom: vs(10),
+            paddingTop: vs(10),
+          },
+          tabBarBackground: () => (
+            <LinearGradient
+              colors={['#00c6ff', '#ff00ff']}
+              style={{
+                flex: 1,
+                borderRadius: ms(35),
+                padding: ms(2),
+              }}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: 'rgba(0, 0, 0, 1)',
+                  borderRadius: ms(35),
+                }}
+              />
+            </LinearGradient>
+          ),
+          tabBarActiveTintColor: '#00c6ff',
+          tabBarInactiveTintColor: '#00c8ff77',
+        }}
+      >
+        <Tab.Screen
+          name="Store"
+          component={StoreStackScreen}
+          options={{
+            tabBarIcon: ({ focused }) => {
+              const size = focused ? s(29) : s(24);
+              return (
+                <Image
+                  source={require('./screens/tabMedia/Store.webp')}
+                  style={{
+                    width: size,
+                    height: size,
+                    tintColor: '#00c6ff',
+                    opacity: focused ? 1 : 0.5,
+                  }}
+                />
+              );
+            },
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileStackScreen}
+          options={{
+            tabBarIcon: ({ focused }) => {
+              const size = focused ? s(29) : s(24);
+              return (
+                <Image
+                  source={require('./screens/tabMedia/Profile.webp')}
+                  style={{
+                    width: size,
+                    height: size,
+                    tintColor: '#00c6ff',
+                    opacity: focused ? 1 : 0.5,
+                  }}
+                />
+              );
+            },
+          }}
+        />
+        <Tab.Screen
+          name="Orders"
+          component={OrderStackScreen}
+          options={{
+            tabBarIcon: ({ focused }) => {
+              const size = focused ? s(29) : s(24);
+              return (
+                <Image
+                  source={require('./screens/tabMedia/Order.webp')}
+                  style={{
+                    width: size,
+                    height: size,
+                    tintColor: '#00c6ff',
+                    opacity: focused ? 1 : 0.5,
+                  }}
+                />
+              );
+            },
+          }}
+        />
+      </Tab.Navigator>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
-
-export default App;
+export default function App() {
+  return (
+    <UserProvider>
+      <StatusBar hidden={true} />
+      <NavigationContainer>
+        <RootStack.Navigator
+          initialRouteName="Login"
+          screenOptions={{ headerShown: false }}
+        >
+          <RootStack.Screen name="Login" component={LoginScreen} />
+          <RootStack.Screen name="Main" component={MainTabs} />
+        </RootStack.Navigator>
+      </NavigationContainer>
+    </UserProvider>
+  );
+}
