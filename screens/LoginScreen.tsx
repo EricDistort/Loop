@@ -182,109 +182,132 @@ export default function LoginRegister() {
             />
           </View>
         )}
+
+        {/* LinearGradient now acts as the main card container */}
         <LinearGradient
-          colors={['#00c6ff', '#ff00ff']}
-          style={{ padding: ms(2), borderRadius: ms(14) }}
+          colors={['#340052ff', '#b300b3ff']}
+          start={{ x: 0, y: 1 }} // top-left corner
+          end={{ x: 1, y: 0 }}
+          style={styles.gradientCard}
         >
-          <View style={styles.container}>
-            <Text style={styles.title}>Login / Register</Text>
+          <Text style={styles.title}>Login / Register</Text>
 
-            <TextInput
-              placeholder="Username"
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              placeholderTextColor="#00c8ff56"
-            />
-            <TextInput
-              placeholder="Password"
-              style={styles.input}
-              value={password}
-              secureTextEntry
-              onChangeText={setPassword}
-              autoCapitalize="none"
-              placeholderTextColor="#00c8ff56"
-            />
-            <TextInput
-              placeholder="Phone Number"
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              placeholderTextColor="#00c8ff56"
-            />
+          <TextInput
+            placeholder="Username"
+            style={styles.input}
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            placeholderTextColor="rgba(255, 255, 255, 0.7)"
+          />
+          <TextInput
+            placeholder="Password"
+            style={styles.input}
+            value={password}
+            secureTextEntry
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            placeholderTextColor="rgba(255, 255, 255, 0.7)"
+          />
+          <TextInput
+            placeholder="Phone Number"
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            placeholderTextColor="rgba(255, 255, 255, 0.7)"
+          />
 
-            {/* State Dropdown */}
-            <View style={styles.dropdownContainer}>
-              <Picker
-                selectedValue={selectedState}
-                onValueChange={itemValue => {
-                  setSelectedState(itemValue);
-                  if (itemValue !== null) fetchCities(itemValue);
-                }}
-                style={styles.picker}
-              >
-                <Picker.Item label="Select State" value={null} />
-                {states.map(state => (
-                  <Picker.Item
-                    key={state.id}
-                    label={state.name}
-                    value={state.id}
-                  />
-                ))}
-              </Picker>
-            </View>
+          {/* State Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <Picker
+              selectedValue={selectedState}
+              onValueChange={itemValue => {
+                setSelectedState(itemValue);
+                if (itemValue !== null) fetchCities(itemValue);
+              }}
+              style={styles.picker}
+              dropdownIconColor="white"
+              itemStyle={{ color: 'white' }} // For iOS
+            >
+              <Picker.Item
+                label="Select State"
+                value={null}
+                style={styles.pickerItem}
+              />
+              {states.map(state => (
+                <Picker.Item
+                  key={state.id}
+                  label={state.name}
+                  value={state.id}
+                  style={styles.pickerItem}
+                />
+              ))}
+            </Picker>
+          </View>
 
-            {/* City Dropdown */}
-            <View style={styles.dropdownContainer}>
-              <Picker
-                selectedValue={selectedCity}
-                onValueChange={itemValue => {
-                  setSelectedCity(itemValue);
-                  if (itemValue !== null) fetchStores(itemValue);
-                }}
-                style={styles.picker}
-                enabled={cities.length > 0}
-              >
-                <Picker.Item label="Select City" value={null} />
-                {cities.map(city => (
-                  <Picker.Item
-                    key={city.id}
-                    label={city.name}
-                    value={city.id}
-                  />
-                ))}
-              </Picker>
-            </View>
+          {/* City Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <Picker
+              selectedValue={selectedCity}
+              onValueChange={itemValue => {
+                setSelectedCity(itemValue);
+                if (itemValue !== null) fetchStores(itemValue);
+              }}
+              style={styles.picker}
+              enabled={cities.length > 0}
+              dropdownIconColor="white"
+              itemStyle={{ color: 'white' }} // For iOS
+            >
+              <Picker.Item
+                label="Select City"
+                value={null}
+                style={styles.pickerItem}
+              />
+              {cities.map(city => (
+                <Picker.Item
+                  key={city.id}
+                  label={city.name}
+                  value={city.id}
+                  style={styles.pickerItem}
+                />
+              ))}
+            </Picker>
+          </View>
 
-            {/* Store Dropdown */}
-            <View style={styles.dropdownContainer}>
-              <Picker
-                selectedValue={selectedStore}
-                onValueChange={itemValue => setSelectedStore(itemValue)}
-                style={styles.picker}
-                enabled={stores.length > 0}
-              >
-                <Picker.Item label="Select Store" value={null} />
-                {stores.map(store => (
-                  <Picker.Item
-                    key={store.id}
-                    label={store.name}
-                    value={store.id}
-                  />
-                ))}
-              </Picker>
-            </View>
+          {/* Store Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <Picker
+              selectedValue={selectedStore}
+              onValueChange={itemValue => setSelectedStore(itemValue)}
+              style={styles.picker}
+              enabled={stores.length > 0}
+              dropdownIconColor="white"
+              itemStyle={{ color: 'white' }} // For iOS
+            >
+              <Picker.Item
+                label="Select Store"
+                value={null}
+                style={styles.pickerItem}
+              />
+              {stores.map(store => (
+                <Picker.Item
+                  key={store.id}
+                  label={store.name}
+                  value={store.id}
+                  style={styles.pickerItem}
+                />
+              ))}
+            </Picker>
+          </View>
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity onPress={handleLogin} style={styles.button}>
-                <Text style={styles.btntxt}>Login</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleRegister} style={styles.button}>
-                <Text style={styles.btntxt}>Register</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity onPress={handleLogin} style={styles.button}>
+              <Text style={styles.btntxt}>Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleRegister} style={styles.button}>
+              <Text style={styles.btntxt}>Register</Text>
+            </TouchableOpacity>
           </View>
         </LinearGradient>
       </SafeAreaView>
@@ -314,53 +337,72 @@ const styles = StyleSheet.create({
     height: s(620),
     backgroundColor: 'black',
   },
-  container: {
+  // Updated to be the main container card
+  gradientCard: {
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
-    padding: s(14),
-    backgroundColor: 'black',
-    height: vs(600),
+    padding: s(5),
+    height: vs(500),
     width: s(300),
-    borderRadius: ms(14),
-    borderWidth: ms(2),
-    borderColor: 'transparent',
-    overflow: 'hidden',
+    borderRadius: ms(50),
+    // Added shadow for depth
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   title: {
     fontSize: ms(26),
     marginBottom: vs(22),
-    color: '#00c6ff',
+    color: 'white', // White for contrast on gradient
     fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowRadius: 3,
   },
   input: {
     width: '80%',
     paddingVertical: ms(10),
     marginBottom: vs(12),
-    backgroundColor: 'transparent',
-    color: '#00c6ff',
-    borderRadius: ms(4),
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Semi-transparent white
+    color: 'white',
+    borderRadius: ms(30),
     fontSize: ms(17),
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#00c8ff7e',
+
+    paddingHorizontal: ms(10),
   },
   dropdownContainer: {
     width: '80%',
     marginBottom: vs(12),
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#00c8ff7e',
-    borderRadius: ms(4),
+
+    borderRadius: ms(30),
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Match input style
   },
-  picker: { color: '#00c6ff', backgroundColor: 'black' },
+  picker: {
+    color: 'white',
+  },
+  pickerItem: {
+    color: 'black', // Native picker items usually need dark text on white background when popped up
+    fontSize: ms(14),
+  },
   button: {
     padding: ms(14),
-    borderRadius: ms(8),
+    borderRadius: ms(80),
     marginTop: vs(12),
     alignItems: 'center',
-    backgroundColor: '#ff00ffbd',
+    backgroundColor: 'white', // White buttons pop on the gradient
     width: '48%',
+    elevation: 2,
   },
-  btntxt: { color: '#fff', fontWeight: 'bold', fontSize: ms(17) },
+  btntxt: {
+    color: '#340052ff', // Gradient-ish color for text
+    fontWeight: 'bold',
+    fontSize: ms(17),
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',

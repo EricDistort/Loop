@@ -11,15 +11,14 @@ import {
 import { UserProvider } from './utils/UserContext';
 import LinearGradient from 'react-native-linear-gradient';
 
-
 // Screens
+import Onboarding from './screens/Onboarding';
 import LoginScreen from './screens/LoginScreen';
 import StoreScreen from './screens/Store/StoreScreen';
 import CartScreen from './screens/Store/CartScreen';
 import ProfileScreen from './screens/Profile/ProfileScreen';
 import OrderScreen from './screens/Order/OrderScreen';
 import OrderDetailScreen from './screens/Order/OrderDetailesScreen';
-
 
 const RootStack = createNativeStackNavigator();
 const StoreStack = createNativeStackNavigator();
@@ -170,9 +169,10 @@ export default function App() {
       <StatusBar hidden={true} />
       <NavigationContainer>
         <RootStack.Navigator
-          initialRouteName="Login"
+          initialRouteName="Onboarding"
           screenOptions={{ headerShown: false }}
         >
+          <RootStack.Screen name="Onboarding" component={Onboarding} />
           <RootStack.Screen name="Login" component={LoginScreen} />
           <RootStack.Screen name="Main" component={MainTabs} />
         </RootStack.Navigator>
