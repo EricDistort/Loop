@@ -16,20 +16,20 @@ const { width } = Dimensions.get('window');
 const slides = [
   {
     id: '1',
-    title: 'Welcome to Our Store',
-    desc: 'Order products easily from your nearest store.',
+    title: 'Shop Anything',
+    desc: 'Jekono Jinish Kinun Apner Kacher Loop Online Store theke.',
     image: require('./LoginMedia/shopanywhere.png'),
   },
   {
     id: '2',
     title: 'Fast Delivery',
-    desc: 'Your items will be delivered from your selected store.',
+    desc: 'Apner Jinish Apner Ghore Pouche Dewa hobe Olpo Shomoye',
     image: require('./LoginMedia/homedelivery.png'),
   },
   {
     id: '3',
-    title: 'Secure Payments',
-    desc: 'Reliable and safe ordering experience.',
+    title: 'Cash Payment',
+    desc: 'Jinish hate peye tarpor apni apner mullo porishod korun',
     image: require('./LoginMedia/cashondelivery.png'),
   },
 ];
@@ -97,7 +97,7 @@ export default function OnboardingScreen({ navigation }: any) {
         {/* Continue button */}
         <TouchableOpacity onPress={() => navigation.replace('Login')}>
           <LinearGradient
-            colors={['#340052ff', '#b300b3ff']}
+            colors={['#340052ff', '#b300a4ff']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.button}

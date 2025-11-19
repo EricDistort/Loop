@@ -31,6 +31,7 @@ export default function LoginRegister() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setUser } = useUser();
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -47,8 +48,8 @@ export default function LoginRegister() {
   }, []);
 
   const fetchStates = async () => {
-    const { data, error } = await supabase.from('states').select('*');
-    if (!error && data) setStates(data);
+    const { data } = await supabase.from('states').select('*');
+    if (data) setStates(data);
   };
 
   const fetchCities = async (stateId: number) => {
@@ -56,27 +57,28 @@ export default function LoginRegister() {
     setStores([]);
     setSelectedCity(null);
     setSelectedStore(null);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('cities')
       .select('*')
       .eq('state_id', stateId);
-    if (!error && data) setCities(data);
+    if (data) setCities(data);
   };
 
   const fetchStores = async (cityId: number) => {
     setStores([]);
     setSelectedStore(null);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('stores')
       .select('*')
       .eq('city_id', cityId);
-    if (!error && data) setStores(data);
+    if (data) setStores(data);
   };
 
   const generateUserId = () => {
     return Math.floor(1000000000 + Math.random() * 9000000000);
   };
 
+  // REGISTER
   const handleRegister = async () => {
     if (
       !username.trim() ||
@@ -89,28 +91,29 @@ export default function LoginRegister() {
       return Alert.alert('Fill all fields');
 
     setLoading(true);
+
     try {
-      // Check if username exists
-      const { data: existingUser } = await supabase
+      // Check if phone number already exists
+      const { data: existingPhone } = await supabase
         .from('users')
-        .select('username')
-        .eq('username', username.trim())
+        .select('phone')
+        .eq('phone', phone.trim())
         .maybeSingle();
 
-      if (existingUser) {
+      if (existingPhone) {
         setLoading(false);
-        return Alert.alert('Username already exists');
+        return Alert.alert('Mobile number already registered');
       }
 
       const userId = generateUserId();
 
-      // Create address string combining state, city, store
       const stateObj = states.find(s => s.id === selectedState);
       const cityObj = cities.find(c => c.id === selectedCity);
       const storeObj = stores.find(st => st.id === selectedStore);
+
       const address = `${stateObj?.name}, ${cityObj?.name}, ${storeObj?.name}`;
 
-      const { data: insertedUser, error: insertError } = await supabase
+      const { data: insertedUser, error } = await supabase
         .from('users')
         .insert([
           {
@@ -127,32 +130,34 @@ export default function LoginRegister() {
         .select('*')
         .single();
 
-      if (insertError) throw insertError;
+      if (error) throw error;
 
       setLoading(false);
       setUser(insertedUser);
       navigation.replace('Main');
-    } catch (error: any) {
+    } catch (e: any) {
       setLoading(false);
-      Alert.alert('Registration Error', error.message);
+      Alert.alert('Registration Error', e.message);
     }
   };
 
+  // LOGIN (phone + password)
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim())
+    if (!phone.trim() || !password.trim())
       return Alert.alert('Fill all fields');
+
     setLoading(true);
     try {
       const { data: user, error } = await supabase
         .from('users')
         .select('*')
-        .eq('username', username.trim())
+        .eq('phone', phone.trim())
         .maybeSingle();
 
       if (error) throw error;
       if (!user) {
         setLoading(false);
-        return Alert.alert('User not found');
+        return Alert.alert('Mobile number not registered');
       }
 
       if (user.password === password.trim()) {
@@ -163,9 +168,9 @@ export default function LoginRegister() {
         setLoading(false);
         Alert.alert('Invalid password');
       }
-    } catch (error: any) {
+    } catch (e: any) {
       setLoading(false);
-      Alert.alert('Login Error', error.message);
+      Alert.alert('Login Error', e.message);
     }
   };
 
@@ -183,23 +188,32 @@ export default function LoginRegister() {
           </View>
         )}
 
-        {/* LinearGradient now acts as the main card container */}
         <LinearGradient
           colors={['#340052ff', '#b300b3ff']}
-          start={{ x: 0, y: 1 }} // top-left corner
+          start={{ x: 0, y: 1 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientCard}
         >
           <Text style={styles.title}>Login / Register</Text>
 
           <TextInput
-            placeholder="Username"
+            placeholder="Nickname"
             style={styles.input}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
-            placeholderTextColor="rgba(255, 255, 255, 0.7)"
+            placeholderTextColor="rgba(255,255,255,0.7)"
           />
+
+          <TextInput
+            placeholder="Mobile No. 01XXX"
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            placeholderTextColor="rgba(255,255,255,0.7)"
+          />
+
           <TextInput
             placeholder="Password"
             style={styles.input}
@@ -207,96 +221,58 @@ export default function LoginRegister() {
             secureTextEntry
             onChangeText={setPassword}
             autoCapitalize="none"
-            placeholderTextColor="rgba(255, 255, 255, 0.7)"
-          />
-          <TextInput
-            placeholder="Phone Number"
-            style={styles.input}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            placeholderTextColor="rgba(255, 255, 255, 0.7)"
+            placeholderTextColor="rgba(255,255,255,0.7)"
           />
 
-          {/* State Dropdown */}
+          {/* State */}
           <View style={styles.dropdownContainer}>
             <Picker
               selectedValue={selectedState}
-              onValueChange={itemValue => {
-                setSelectedState(itemValue);
-                if (itemValue !== null) fetchCities(itemValue);
+              onValueChange={v => {
+                setSelectedState(v);
+                if (v !== null) fetchCities(v);
               }}
               style={styles.picker}
               dropdownIconColor="white"
-              itemStyle={{ color: 'white' }} // For iOS
             >
-              <Picker.Item
-                label="Select State"
-                value={null}
-                style={styles.pickerItem}
-              />
+              <Picker.Item label="Select State" value={null} />
               {states.map(state => (
-                <Picker.Item
-                  key={state.id}
-                  label={state.name}
-                  value={state.id}
-                  style={styles.pickerItem}
-                />
+                <Picker.Item key={state.id} label={state.name} value={state.id} />
               ))}
             </Picker>
           </View>
 
-          {/* City Dropdown */}
+          {/* City */}
           <View style={styles.dropdownContainer}>
             <Picker
               selectedValue={selectedCity}
-              onValueChange={itemValue => {
-                setSelectedCity(itemValue);
-                if (itemValue !== null) fetchStores(itemValue);
+              onValueChange={v => {
+                setSelectedCity(v);
+                if (v !== null) fetchStores(v);
               }}
-              style={styles.picker}
               enabled={cities.length > 0}
+              style={styles.picker}
               dropdownIconColor="white"
-              itemStyle={{ color: 'white' }} // For iOS
             >
-              <Picker.Item
-                label="Select City"
-                value={null}
-                style={styles.pickerItem}
-              />
+              <Picker.Item label="Select City" value={null} />
               {cities.map(city => (
-                <Picker.Item
-                  key={city.id}
-                  label={city.name}
-                  value={city.id}
-                  style={styles.pickerItem}
-                />
+                <Picker.Item key={city.id} label={city.name} value={city.id} />
               ))}
             </Picker>
           </View>
 
-          {/* Store Dropdown */}
+          {/* Store */}
           <View style={styles.dropdownContainer}>
             <Picker
               selectedValue={selectedStore}
-              onValueChange={itemValue => setSelectedStore(itemValue)}
-              style={styles.picker}
+              onValueChange={v => setSelectedStore(v)}
               enabled={stores.length > 0}
+              style={styles.picker}
               dropdownIconColor="white"
-              itemStyle={{ color: 'white' }} // For iOS
             >
-              <Picker.Item
-                label="Select Store"
-                value={null}
-                style={styles.pickerItem}
-              />
+              <Picker.Item label="Select Store" value={null} />
               {stores.map(store => (
-                <Picker.Item
-                  key={store.id}
-                  label={store.name}
-                  value={store.id}
-                  style={styles.pickerItem}
-                />
+                <Picker.Item key={store.id} label={store.name} value={store.id} />
               ))}
             </Picker>
           </View>
@@ -320,7 +296,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: ms(8),
   },
   fullScreenContainer: {
     position: 'absolute',
@@ -337,69 +312,47 @@ const styles = StyleSheet.create({
     height: s(620),
     backgroundColor: 'black',
   },
-  // Updated to be the main container card
   gradientCard: {
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
     padding: s(5),
     height: vs(500),
     width: s(300),
     borderRadius: ms(50),
-    // Added shadow for depth
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   title: {
     fontSize: ms(26),
     marginBottom: vs(22),
-    color: 'white', // White for contrast on gradient
+    color: 'white',
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowRadius: 3,
   },
   input: {
     width: '80%',
     paddingVertical: ms(10),
     marginBottom: vs(12),
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Semi-transparent white
     color: 'white',
-    borderRadius: ms(30),
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#ffffff7e',
     fontSize: ms(17),
-
-    paddingHorizontal: ms(10),
+    paddingHorizontal: ms(8),
   },
   dropdownContainer: {
     width: '80%',
     marginBottom: vs(12),
-
-    borderRadius: ms(30),
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Match input style
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#ffffff7e',
   },
-  picker: {
-    color: 'white',
-  },
-  pickerItem: {
-    color: 'black', // Native picker items usually need dark text on white background when popped up
-    fontSize: ms(14),
-  },
+  picker: { color: 'rgba(255,255,255,0.7)' },
   button: {
     padding: ms(14),
     borderRadius: ms(80),
     marginTop: vs(12),
-    alignItems: 'center',
-    backgroundColor: 'white', // White buttons pop on the gradient
+    backgroundColor: 'white',
     width: '48%',
-    elevation: 2,
+    alignItems: 'center',
   },
   btntxt: {
-    color: '#340052ff', // Gradient-ish color for text
+    color: '#340052ff',
     fontWeight: 'bold',
     fontSize: ms(17),
   },
@@ -407,7 +360,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '80%',
-    alignItems: 'center',
-    marginTop: vs(12),
   },
 });

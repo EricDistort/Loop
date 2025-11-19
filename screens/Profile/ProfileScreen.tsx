@@ -1,138 +1,60 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Alert } from 'react-native';
-import { supabase } from '../../utils/supabaseClient';
-import { useUser } from '../../utils/UserContext';
-import ScreenWrapper from '../../utils/ScreenWrapper';
-import {
-  scale as s,
-  verticalScale as vs,
-  moderateScale as ms,
-} from 'react-native-size-matters';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { scale as s, verticalScale as vs, moderateScale as ms } from 'react-native-size-matters';
+// 1. Import the context hook
+import { useUser } from '../../utils/UserContext'; 
 
-type UserProfile = {
-  id: number;
-  username: string;
-  phone: string;
-  state_name: string;
-  city_name: string;
-  store_name: string;
-  created_at: string;
-};
+export default function GreetingsHeader() {
+  // 2. Get user directly from Context
+  const { user } = useUser(); 
 
-export default function ProfileScreen() {
-  const { user } = useUser();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-
-  useEffect(() => {
-    fetchProfile();
+  const greeting = useMemo(() => {
+    const words = ['Hey', 'Hi', 'Welcome'];
+    return words[Math.floor(Math.random() * words.length)];
   }, []);
 
-  const fetchProfile = async () => {
-    if (!user) return;
-
-    try {
-      // 1. Fetch user basic info
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (userError || !userData)
-        throw userError || new Error('User not found');
-
-      // 2. Fetch state name
-      const { data: stateData } = await supabase
-        .from('states')
-        .select('name')
-        .eq('id', userData.state_id)
-        .maybeSingle();
-
-      // 3. Fetch city name
-      const { data: cityData } = await supabase
-        .from('cities')
-        .select('name')
-        .eq('id', userData.city_id)
-        .maybeSingle();
-
-      // 4. Fetch store name
-      const { data: storeData } = await supabase
-        .from('stores')
-        .select('name')
-        .eq('id', userData.store_id)
-        .maybeSingle();
-
-      setProfile({
-        id: userData.id,
-        username: userData.username,
-        phone: userData.phone,
-        state_name: stateData?.name || 'N/A',
-        city_name: cityData?.name || 'N/A',
-        store_name: storeData?.name || 'N/A',
-        created_at: userData.created_at,
-      });
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
-  };
-
-  if (!profile) return null;
-
   return (
-    <ScreenWrapper>
-      <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.title}>My Profile</Text>
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.label}>User ID:</Text>
-          <Text style={styles.value}>{profile.id}</Text>
-
-          <Text style={styles.label}>Username:</Text>
-          <Text style={styles.value}>{profile.username}</Text>
-
-          <Text style={styles.label}>Phone:</Text>
-          <Text style={styles.value}>{profile.phone}</Text>
-
-          <Text style={styles.label}>State:</Text>
-          <Text style={styles.value}>{profile.state_name}</Text>
-
-          <Text style={styles.label}>City:</Text>
-          <Text style={styles.value}>{profile.city_name}</Text>
-
-          <Text style={styles.label}>Store:</Text>
-          <Text style={styles.value}>{profile.store_name}</Text>
-
-          <Text style={styles.label}>Joined On:</Text>
-          <Text style={styles.value}>
-            {new Date(profile.created_at).toLocaleDateString()}
-          </Text>
-        </View>
-      </SafeAreaView>
-    </ScreenWrapper>
+    <View style={styles.container}>
+      <View style={styles.textWrapper}>
+        <Text style={styles.greetingTitle}>
+          {greeting}, 
+          {/* 3. Pull username specifically from the user object */}
+          <Text style={styles.username}> {user?.username || 'Guest'}</Text>
+        </Text>
+        <Text style={styles.bodyText}>
+          shop anything from here i am ready to help you
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, padding: ms(10), backgroundColor: 'black' },
-  title: {
-    fontSize: ms(26),
-    fontWeight: 'bold',
-    color: '#00c6ff',
-    marginBottom: vs(12),
-    alignSelf: 'center',
+  container: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: ms(20),
   },
-  infoContainer: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: ms(10),
-    padding: ms(12),
-    borderWidth: 1,
-    borderColor: '#00c6ff33',
+  textWrapper: {
+    alignItems: 'center',
   },
-  label: { color: '#00c6ff', fontSize: ms(14), marginTop: vs(6) },
-  value: {
-    color: '#ff00ff',
+  greetingTitle: {
+    fontSize: ms(32),
+    fontWeight: '900',
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: vs(10),
+  },
+  username: {
+    color: '#00c6ff', // Cyan neon
+    textTransform: 'capitalize', // Optional: Makes name look better (e.g. "john" -> "John")
+  },
+  bodyText: {
     fontSize: ms(16),
-    fontWeight: 'bold',
-    marginTop: vs(2),
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
