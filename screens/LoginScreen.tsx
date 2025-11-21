@@ -180,7 +180,7 @@ export default function LoginRegister() {
         {loading && (
           <View style={styles.fullScreenContainer}>
             <LottieView
-              source={require('./LoginMedia/loginanimation2.json')}
+              source={require('./LoginMedia/loginanimation5.json')}
               autoPlay
               loop
               style={styles.fullScreenAnimation}
@@ -237,7 +237,11 @@ export default function LoginRegister() {
             >
               <Picker.Item label="Select State" value={null} />
               {states.map(state => (
-                <Picker.Item key={state.id} label={state.name} value={state.id} />
+                <Picker.Item
+                  key={state.id}
+                  label={state.name}
+                  value={state.id}
+                />
               ))}
             </Picker>
           </View>
@@ -272,7 +276,11 @@ export default function LoginRegister() {
             >
               <Picker.Item label="Select Store" value={null} />
               {stores.map(store => (
-                <Picker.Item key={store.id} label={store.name} value={store.id} />
+                <Picker.Item
+                  key={store.id}
+                  label={store.name}
+                  value={store.id}
+                />
               ))}
             </Picker>
           </View>
@@ -306,11 +314,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
+    backgroundColor: 'white',
   },
   fullScreenAnimation: {
-    width: s(620),
-    height: s(620),
-    backgroundColor: 'black',
+    width: s(350),
+    height: s(350),
+    backgroundColor: 'white',
   },
   gradientCard: {
     justifyContent: 'center',
@@ -342,7 +351,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: '#ffffff7e',
   },
-  picker: { color: 'rgba(255,255,255,0.7)' },
+  picker: { color: 'rgba(255, 255, 255, 0.7)', fontSize: ms(17) },
   button: {
     padding: ms(14),
     borderRadius: ms(80),

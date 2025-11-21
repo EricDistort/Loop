@@ -15,9 +15,11 @@ import LinearGradient from 'react-native-linear-gradient';
 import Onboarding from './screens/Onboarding';
 import LoginScreen from './screens/LoginScreen';
 import StoreScreen from './screens/Store/StoreScreen';
+import BannerDetailsScreen from './screens/Store/BannerDetailsScreen';
 import CartScreen from './screens/Store/CartScreen';
 import ProfileScreen from './screens/Profile/ProfileScreen';
-import OrderScreen from './screens/Order/OrderScreen';
+import UserOrdersScreen from './screens/Order/OrderScreen';
+
 import OrderDetailScreen from './screens/Order/OrderDetailesScreen';
 
 const RootStack = createNativeStackNavigator();
@@ -30,6 +32,10 @@ function StoreStackScreen() {
   return (
     <StoreStack.Navigator screenOptions={{ headerShown: false }}>
       <StoreStack.Screen name="StoreMain" component={StoreScreen} />
+      <StoreStack.Screen
+        name="BannerDetailsScreen"
+        component={BannerDetailsScreen}
+      />
       <StoreStack.Screen name="Cart" component={CartScreen} />
     </StoreStack.Navigator>
   );
@@ -47,7 +53,8 @@ function ProfileStackScreen() {
 function OrderStackScreen() {
   return (
     <OrderStack.Navigator screenOptions={{ headerShown: false }}>
-      <OrderStack.Screen name="OrderMain" component={OrderScreen} />
+      <OrderStack.Screen name="OrderMain" component={UserOrdersScreen} />
+
       <OrderStack.Screen name="OrderDetail" component={OrderDetailScreen} />
     </OrderStack.Navigator>
   );
@@ -68,17 +75,19 @@ function MainTabs() {
             height: vs(65),
             backgroundColor: 'rgba(0, 0, 0, 1)',
             borderRadius: ms(35),
-            borderWidth: ms(2),
-            borderColor: 'transparent',
+
+            borderTopWidth: 0,
             overflow: 'hidden',
-            elevation: 5,
+            //elevation: 5,
             marginHorizontal: '5%',
             paddingBottom: vs(10),
             paddingTop: vs(10),
           },
           tabBarBackground: () => (
             <LinearGradient
-              colors={['#00c6ff', '#ff00ff']}
+              colors={['#340052ff', '#960096ff']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
               style={{
                 flex: 1,
                 borderRadius: ms(35),
@@ -88,14 +97,14 @@ function MainTabs() {
               <View
                 style={{
                   flex: 1,
-                  backgroundColor: 'rgba(0, 0, 0, 1)',
+                  backgroundColor: 'rgba(0, 0, 0, 0)',
                   borderRadius: ms(35),
                 }}
               />
             </LinearGradient>
           ),
-          tabBarActiveTintColor: '#00c6ff',
-          tabBarInactiveTintColor: '#00c8ff77',
+          tabBarActiveTintColor: '#ffffffff',
+          tabBarInactiveTintColor: '#ffffff77',
         }}
       >
         <Tab.Screen
@@ -110,7 +119,7 @@ function MainTabs() {
                   style={{
                     width: size,
                     height: size,
-                    tintColor: '#00c6ff',
+                    tintColor: '#ffffffff',
                     opacity: focused ? 1 : 0.5,
                   }}
                 />
@@ -130,7 +139,7 @@ function MainTabs() {
                   style={{
                     width: size,
                     height: size,
-                    tintColor: '#00c6ff',
+                    tintColor: '#ffffffff',
                     opacity: focused ? 1 : 0.5,
                   }}
                 />
@@ -150,7 +159,7 @@ function MainTabs() {
                   style={{
                     width: size,
                     height: size,
-                    tintColor: '#00c6ff',
+                    tintColor: '#ffffffff',
                     opacity: focused ? 1 : 0.5,
                   }}
                 />

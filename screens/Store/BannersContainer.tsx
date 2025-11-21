@@ -1,14 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
-  ImageBackground,
+  Image,
   Dimensions,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
-import { supabase } from '../../utils/supabaseClient'; // Adjust path as needed
+import { useNavigation } from '@react-navigation/native';
+import { supabase } from '../../utils/supabaseClient';
 import {
   scale as s,
   verticalScale as vs,
@@ -29,9 +30,9 @@ export default function BannerCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const navigation = useNavigation();
   const flatListRef = useRef<FlatList>(null);
 
-  // 1. Fetch Banners
   useEffect(() => {
     fetchBanners();
   }, []);
@@ -52,19 +53,13 @@ export default function BannerCarousel() {
     }
   };
 
-  // 2. Auto Scroll Logic (Every 3 Seconds)
   useEffect(() => {
     if (banners.length === 0) return;
 
     const interval = setInterval(() => {
       let nextIndex = activeIndex + 1;
+      if (nextIndex >= banners.length) nextIndex = 0;
 
-      // If we reach the end, go back to 0
-      if (nextIndex >= banners.length) {
-        nextIndex = 0;
-      }
-
-      // Scroll to the next item
       flatListRef.current?.scrollToIndex({
         index: nextIndex,
         animated: true,
@@ -76,14 +71,12 @@ export default function BannerCarousel() {
     return () => clearInterval(interval);
   }, [activeIndex, banners]);
 
-  // Handle manual scroll updates (optional, keeps state in sync if user swipes)
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
       setActiveIndex(viewableItems[0].index);
     }
   }).current;
 
-  // Render Loading State
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -92,24 +85,25 @@ export default function BannerCarousel() {
     );
   }
 
-  // Render Item
   const renderItem = ({ item }: { item: Banner }) => (
     <View style={styles.slide}>
-      <ImageBackground
-        source={{ uri: item.image_url }}
-        style={styles.imageBackground}
-        imageStyle={{ borderRadius: 0 }} // Images fill the container exactly
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate('BannerDetailsScreen', {
+            image: item.image_url,
+            title: item.title,
+            description: item.body_text,
+          })
+        }
+        style={styles.imageContainer}
       >
-        {/* Dark Overlay for text readability */}
-        <View style={styles.overlay}>
-          <View style={styles.textContainer}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.bodyText} numberOfLines={2}>
-              {item.body_text}
-            </Text>
-          </View>
-        </View>
-      </ImageBackground>
+        <Image
+          source={{ uri: item.image_url }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      </TouchableOpacity>
     </View>
   );
 
@@ -125,89 +119,50 @@ export default function BannerCarousel() {
         showsHorizontalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-        // Ensure FlatList knows the layout to scroll accurately
         getItemLayout={(_, index) => ({
           length: SCREEN_WIDTH,
           offset: SCREEN_WIDTH * index,
           index,
         })}
       />
-
-      {/* Optional: Pagination Dots */}
-      <View style={styles.pagination}>
-        {banners.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              {
-                backgroundColor:
-                  index === activeIndex ? '#ff00ff' : 'rgba(255,255,255,0.3)',
-              },
-            ]}
-          />
-        ))}
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    height: vs(200),
     width: '100%',
-    backgroundColor: '#000',
+    backgroundColor: 'transparent',
+    marginTop: vs(-50),
   },
   loadingContainer: {
-    flex: 1,
+    height: vs(200),
     justifyContent: 'center',
     alignItems: 'center',
   },
   slide: {
     width: SCREEN_WIDTH,
     height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: ms(15),
   },
-  imageBackground: {
-    flex: 1,
-    justifyContent: 'flex-end', // Push text to bottom
-  },
-  overlay: {
-    backgroundColor: 'rgba(0,0,0,0.6)', // Semi-transparent black
-    padding: ms(15),
+  imageContainer: {
     width: '100%',
-    paddingBottom: vs(20),
+    height: '80%',
+    borderRadius: ms(30),
+    overflow: 'hidden',
+    borderWidth: 5,
+    borderColor: '#ffffffff',
+        shadowColor: 'rgba(0, 0, 0, 1)',
+    shadowOffset: { width: 0, height: vs(1) },
+    shadowOpacity: 1,
+    shadowRadius: ms(10),
+    elevation: 15,
   },
-  textContainer: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#ff00ff', // Neon pink accent
-    paddingLeft: ms(10),
-  },
-  title: {
-    fontSize: ms(20),
-    fontWeight: '900',
-    color: 'white',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: vs(4),
-    textShadowColor: '#ff00ff',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
-  },
-  bodyText: {
-    fontSize: ms(12),
-    color: '#ddd',
-    fontWeight: '500',
-  },
-  pagination: {
-    position: 'absolute',
-    bottom: vs(10),
-    right: ms(20),
-    flexDirection: 'row',
-  },
-  dot: {
-    width: s(8),
-    height: s(8),
-    borderRadius: s(4),
-    marginLeft: s(6),
+  image: {
+    width: '100%',
+    height: '100%',
   },
 });
