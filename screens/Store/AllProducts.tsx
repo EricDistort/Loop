@@ -124,7 +124,9 @@ export default function AllProducts({
           }
           activeOpacity={0.7}
         >
+          {/* HEIGHT REDUCED HERE */}
           <Image source={{ uri: item.image_url }} style={localStyles.image} />
+          {/* HEIGHT REDUCED HERE */}
           <View style={localStyles.info}>
             <Text style={localStyles.name}>{item.name}</Text>
             {item.brand ? (
@@ -134,7 +136,9 @@ export default function AllProducts({
           </View>
         </TouchableOpacity>
 
+        {/* HEIGHT REDUCED HERE */}
         <View style={localStyles.actionColumn}>
+          {/* BUTTON HEIGHT REDUCED HERE */}
           <TouchableOpacity
             style={localStyles.addBtnSmall}
             onPress={() => commitToCart(item)}
@@ -142,6 +146,7 @@ export default function AllProducts({
             <Text style={localStyles.addBtnText}>ADD</Text>
           </TouchableOpacity>
 
+          {/* COUNTER HEIGHT REDUCED HERE */}
           <View style={localStyles.horizontalCounter}>
             <TouchableOpacity
               style={localStyles.counterBtn}
@@ -150,7 +155,7 @@ export default function AllProducts({
             >
               <Text
                 style={[
-                  localStyles.counterSymbol,
+                  localStyles.counterText,
                   { opacity: quantity === 0 ? 0.3 : 1 },
                 ]}
               >
@@ -158,13 +163,13 @@ export default function AllProducts({
               </Text>
             </TouchableOpacity>
 
-            <Text style={localStyles.counterText}>{quantity}</Text>
+            <Text style={localStyles.counterNumber}>{quantity}</Text>
 
             <TouchableOpacity
               style={localStyles.counterBtn}
               onPress={() => updateLocalQuantity(item.id, 1)}
             >
-              <Text style={localStyles.counterSymbol}>+</Text>
+              <Text style={localStyles.counterText}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -229,7 +234,7 @@ export default function AllProducts({
   );
 }
 
-// --- LOCAL STYLES ---
+// --- LOCAL STYLES (HEIGHT ADJUSTMENTS APPLIED HERE) ---
 const localStyles = StyleSheet.create({
   listHeader: {
     flexDirection: 'row',
@@ -257,7 +262,7 @@ const localStyles = StyleSheet.create({
     paddingVertical: vs(4),
     paddingHorizontal: ms(12),
     borderRadius: ms(12),
-    marginLeft: ms(5),
+    marginRight: ms(5),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -277,16 +282,16 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // NEW STYLE FOR THE CART ICON IMAGE
   cartIcon: {
     width: ms(20),
     height: ms(20),
     resizeMode: 'contain',
-    tintColor: 'white', // Remove this line if your PNG is already colored
+    tintColor: 'white',
   },
   noResultContainer: { padding: ms(20), alignItems: 'center' },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
 
+  // --- CARD STYLES ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
@@ -297,16 +302,19 @@ const localStyles = StyleSheet.create({
   },
   clickableArea: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   image: {
-    width: s(70),
-    height: s(70),
-    borderRadius: ms(25),
+    // REDUCED FROM s(70)
+    width: s(55),
+    height: s(55),
+    // REDUCED FROM ms(25)
+    borderRadius: ms(20),
     backgroundColor: '#eee',
   },
   info: {
     flex: 1,
     marginLeft: ms(15),
     justifyContent: 'space-evenly',
-    height: s(60),
+    // REDUCED FROM s(60)
+    height: s(55),
   },
   name: {
     fontSize: ms(16),
@@ -327,7 +335,8 @@ const localStyles = StyleSheet.create({
   },
   actionColumn: {
     width: s(90),
-    height: s(65),
+    // REDUCED FROM s(65)
+    height: s(55),
     flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -336,7 +345,8 @@ const localStyles = StyleSheet.create({
   addBtnSmall: {
     backgroundColor: '#6c008dff',
     width: s(90),
-    height: s(30),
+    // REDUCED FROM s(30)
+    height: s(25),
     borderRadius: ms(50),
     justifyContent: 'center',
     alignItems: 'center',
@@ -349,15 +359,23 @@ const localStyles = StyleSheet.create({
     backgroundColor: '#34005218',
     borderRadius: ms(50),
     width: '100%',
-    height: vs(25),
+    // REDUCED FROM vs(25)
+    height: vs(20),
   },
   counterBtn: {
-    marginHorizontal: s(15),
+    marginHorizontal: s(10),
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
   counterSymbol: { fontSize: ms(20), color: '#555', fontWeight: '900' },
   counterText: {
+    fontSize: ms(15),
+    fontWeight: '900',
+    color: '#333',
+    minWidth: s(15),
+    textAlign: 'center',
+  },
+  counterNumber: {
     fontSize: ms(15),
     fontWeight: '900',
     color: '#333',
