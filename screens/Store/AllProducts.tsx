@@ -190,7 +190,7 @@ export default function AllProducts({
             </TouchableOpacity>
           )}
 
-          {/* NEW: "All" Button inside search bar */}
+          {/* "All" Button inside search bar */}
           <TouchableOpacity
             style={localStyles.allButton}
             onPress={() =>
@@ -208,7 +208,12 @@ export default function AllProducts({
           style={localStyles.headerCartBtn}
           onPress={() => navigation.navigate('Cart')}
         >
-          <Text style={localStyles.headerCartText}>🛒</Text>
+          {/* UPDATED: Replaced Emoji Text with Local Image */}
+          {/* REPLACE THE PATH BELOW WITH YOUR ACTUAL IMAGE PATH */}
+          <Image
+            source={require('../StoreMedia/Cart.png')}
+            style={localStyles.cartIcon}
+          />
         </TouchableOpacity>
       </View>
 
@@ -237,17 +242,16 @@ const localStyles = StyleSheet.create({
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#6c008d25',
+    backgroundColor: '#64008b10',
     borderRadius: ms(17),
     alignItems: 'center',
     paddingLeft: ms(15),
-    paddingRight: ms(5), // Reduced padding right for the button
+    paddingRight: ms(5),
     height: vs(35),
   },
   searchInput: { flex: 1, fontSize: ms(14), color: '#333', height: '100%' },
   clearIcon: { fontSize: ms(14), color: '#999', padding: ms(5) },
 
-  // NEW STYLES FOR ALL BUTTON
   allButton: {
     backgroundColor: 'white',
     paddingVertical: vs(4),
@@ -273,7 +277,13 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerCartText: { fontSize: ms(20), color: 'white' },
+  // NEW STYLE FOR THE CART ICON IMAGE
+  cartIcon: {
+    width: ms(20),
+    height: ms(20),
+    resizeMode: 'contain',
+    tintColor: 'white', // Remove this line if your PNG is already colored
+  },
   noResultContainer: { padding: ms(20), alignItems: 'center' },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
 

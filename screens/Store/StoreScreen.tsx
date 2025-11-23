@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   },
   whiteContainer: {
     minHeight: SCREEN_HEIGHT,
-    backgroundColor: 'white',
+    backgroundColor: '#ffffffff',
     zIndex: 3,
     marginTop: -20,
     paddingTop: ms(20),

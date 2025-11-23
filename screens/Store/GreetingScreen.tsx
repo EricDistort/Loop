@@ -1,5 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Image // <--- Imported Image
+} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   scale as s,
@@ -38,8 +44,13 @@ export default function GreetingsHeader() {
           </Text>
         </View>
 
+        {/* UPDATED HELP BUTTON */}
         <TouchableOpacity style={styles.helpButton}>
-          <Text style={styles.helpText}>Help</Text>
+           {/* REPLACE THE PATH BELOW WITH YOUR ACTUAL IMAGE PATH */}
+          <Image 
+            source={require('../StoreMedia/Help.png')} 
+            style={styles.helpIcon} 
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -51,8 +62,6 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     paddingHorizontal: ms(20),
-    //paddingVertical: vs(20),
-    //overflow: 'hidden',
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
@@ -100,20 +109,25 @@ const styles = StyleSheet.create({
     fontSize: ms(16),
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'left',
-    paddingRight: ms(20),
-    //fontStyle: 'italic',
+    paddingRight: ms(40),
   },
 
+  // --- UPDATED BUTTON STYLES ---
   helpButton: {
-    paddingVertical: ms(8),
-    paddingHorizontal: ms(16),
-    borderWidth: 1,
-    borderColor: '#00c6ff',
-    borderRadius: ms(10),
+    // Removed border/padding to make it a clean icon button
+    padding: ms(5),
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 1)',
+    borderRadius: ms(17),
+    width: ms(40),
+    height: ms(40),
   },
 
-  helpText: {
-    color: '#00c6ff',
-    fontWeight: 'bold',
+  helpIcon: {
+    width: ms(28), // Adjust size as needed
+    height: ms(28),
+    resizeMode: 'contain',
+    //tintColor: '#ffffff', // Keeping the cyan accent color
   },
 });
