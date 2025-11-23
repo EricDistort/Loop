@@ -19,7 +19,8 @@ import BannerDetailsScreen from './screens/Store/BannerDetailsScreen';
 import CartScreen from './screens/Store/CartScreen';
 import ProfileScreen from './screens/Profile/ProfileScreen';
 import UserOrdersScreen from './screens/Order/OrderScreen';
-
+import ProductDetails from './screens/Store/ProductDetails';
+import FullCatalog from './screens/Store/FullCatalog';
 import OrderDetailScreen from './screens/Order/OrderDetailesScreen';
 
 const RootStack = createNativeStackNavigator();
@@ -37,6 +38,8 @@ function StoreStackScreen() {
         component={BannerDetailsScreen}
       />
       <StoreStack.Screen name="Cart" component={CartScreen} />
+      <StoreStack.Screen name="ProductDetails" component={ProductDetails} />
+      <StoreStack.Screen name="FullCatalog" component={FullCatalog} />
     </StoreStack.Navigator>
   );
 }

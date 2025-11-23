@@ -12,7 +12,7 @@ export default function GreetingsHeader() {
   const { user } = useUser();
 
   const greeting = useMemo(() => {
-    const words = ['Hey', 'Hi', 'Welcome'];
+    const words = ['Hey', 'Hi'];
     return words[Math.floor(Math.random() * words.length)];
   }, []);
 
@@ -34,7 +34,7 @@ export default function GreetingsHeader() {
           </Text>
 
           <Text style={styles.bodyText}>
-            shop anything from here i am ready to help you
+            Shop anything from loop I am here to help you
           </Text>
         </View>
 
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     fontSize: ms(16),
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'left',
+    paddingRight: ms(20),
     //fontStyle: 'italic',
   },
 

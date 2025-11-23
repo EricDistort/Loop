@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
+  ScrollView,
+  StatusBar,
 } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import {
@@ -16,7 +18,7 @@ import {
 } from 'react-native-size-matters';
 
 // Type definitions
-export type Product = {
+type Product = {
   id: number;
   name: string;
   brand: string;
@@ -26,22 +28,18 @@ export type Product = {
   stock_quantity: number;
 };
 
-export type User = {
+type User = {
   id: string;
   store_id: string;
 };
 
-type AllProductsProps = {
-  products: Product[];
-  user: User | null;
-  navigation: any;
-};
+export default function FullCatalog({ route, navigation }: any) {
+  // 1. Get data passed from the AllProducts "All" button
+  const { products, user } = route.params as {
+    products: Product[];
+    user: User;
+  };
 
-export default function AllProducts({
-  products,
-  user,
-  navigation,
-}: AllProductsProps) {
   // --- STATE ---
   const [itemQuantities, setItemQuantities] = useState<{
     [key: number]: number;
@@ -100,7 +98,6 @@ export default function AllProducts({
           },
         ]);
       }
-
       Alert.alert(
         'Success',
         `${quantityToAdd} item(s) added to cart successfully!`,
@@ -111,7 +108,7 @@ export default function AllProducts({
     }
   };
 
-  // --- RENDER PRODUCT CARD ---
+  // --- RENDER PRODUCT CARD (Identical Modern Style) ---
   const renderProductCard = (item: Product) => {
     const quantity = itemQuantities[item.id] || 0;
 
@@ -126,7 +123,9 @@ export default function AllProducts({
         >
           <Image source={{ uri: item.image_url }} style={localStyles.image} />
           <View style={localStyles.info}>
-            <Text style={localStyles.name}>{item.name}</Text>
+            <Text style={localStyles.name} numberOfLines={1}>
+              {item.name}
+            </Text>
             {item.brand ? (
               <Text style={localStyles.brandText}>{item.brand}</Text>
             ) : null}
@@ -134,6 +133,7 @@ export default function AllProducts({
           </View>
         </TouchableOpacity>
 
+        {/* Right: Actions Column */}
         <View style={localStyles.actionColumn}>
           <TouchableOpacity
             style={localStyles.addBtnSmall}
@@ -173,36 +173,20 @@ export default function AllProducts({
   };
 
   return (
-    <View style={{ width: '100%' }}>
-      {/* HEADER */}
-      <View style={localStyles.listHeader}>
-        <View style={localStyles.searchContainer}>
-          <TextInput
-            style={localStyles.searchInput}
-            placeholder="Search..."
-            placeholderTextColor="#a08eacff"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={localStyles.clearIcon}>✕</Text>
-            </TouchableOpacity>
-          )}
+    <View style={localStyles.screenContainer}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-          {/* NEW: "All" Button inside search bar */}
-          <TouchableOpacity
-            style={localStyles.allButton}
-            onPress={() =>
-              navigation.navigate('FullCatalog', {
-                products: products,
-                user: user,
-              })
-            }
-          >
-            <Text style={localStyles.allButtonText}>All</Text>
-          </TouchableOpacity>
-        </View>
+      {/* --- HEADER (Back + Title + Cart) --- */}
+      <View style={localStyles.screenHeader}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={localStyles.backButton}
+        >
+          {/* Simple Back Arrow */}
+          <Text style={localStyles.backButtonText}>←</Text>
+        </TouchableOpacity>
+
+        <Text style={localStyles.screenTitle}>All Products</Text>
 
         <TouchableOpacity
           style={localStyles.headerCartBtn}
@@ -212,146 +196,220 @@ export default function AllProducts({
         </TouchableOpacity>
       </View>
 
-      {/* LIST */}
-      {filteredProducts.length > 0 ? (
-        filteredProducts.map(renderProductCard)
-      ) : (
-        <View style={localStyles.noResultContainer}>
-          <Text style={localStyles.emptyText}>No products found.</Text>
-        </View>
-      )}
+      {/* --- SEARCH BAR (Identical, but NO 'All' button) --- */}
+      <View style={localStyles.searchContainer}>
+        <TextInput
+          style={localStyles.searchInput}
+          placeholder="Search products..."
+          placeholderTextColor="#a08eacff"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Text style={localStyles.clearIcon}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* --- SCROLLABLE LIST --- */}
+      <ScrollView
+        contentContainerStyle={localStyles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map(renderProductCard)
+        ) : (
+          <View style={localStyles.noResultContainer}>
+            <Text style={localStyles.emptyText}>
+              No products found matching "{searchQuery}"
+            </Text>
+          </View>
+        )}
+        {/* Bottom spacer */}
+        <View style={{ height: 50 }} />
+      </ScrollView>
     </View>
   );
 }
 
-// --- LOCAL STYLES ---
+// --- LOCAL STYLES (Identical to modernized AllProducts) ---
 const localStyles = StyleSheet.create({
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: vs(15),
-    width: '100%',
-    gap: ms(10),
-  },
-  searchContainer: {
+  screenContainer: {
     flex: 1,
+    backgroundColor: '#fff', // White background for the full screen
+    paddingTop: vs(10), // Safe area top
+    paddingHorizontal: ms(10),
+  },
+
+  // Header Styles
+  screenHeader: {
     flexDirection: 'row',
-    backgroundColor: '#6c008d25',
-    borderRadius: ms(17),
     alignItems: 'center',
-    paddingLeft: ms(15),
-    paddingRight: ms(5), // Reduced padding right for the button
-    height: vs(35),
+    justifyContent: 'space-between',
+    marginBottom: vs(15),
+    paddingHorizontal: ms(5),
+  },
+  backButton: {
+    padding: ms(5),
+    width: ms(40),
+  },
+  backButtonText: {
+    fontSize: ms(28),
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  screenTitle: {
+    fontSize: ms(20),
+    fontWeight: '900',
+    color: '#333',
+  },
+
+  // Search Container (No 'All' Button)
+  searchContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: ms(50),
+    alignItems: 'center',
+    paddingHorizontal: ms(15),
+    height: vs(40),
+    marginBottom: vs(15),
+    // Shadows
+    shadowColor: '#6c008d',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#6c008d15',
   },
   searchInput: { flex: 1, fontSize: ms(14), color: '#333', height: '100%' },
   clearIcon: { fontSize: ms(14), color: '#999', padding: ms(5) },
 
-  // NEW STYLES FOR ALL BUTTON
-  allButton: {
-    backgroundColor: 'white',
-    paddingVertical: vs(4),
-    paddingHorizontal: ms(12),
-    borderRadius: ms(12),
-    marginLeft: ms(5),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    elevation: 1,
-  },
-  allButtonText: {
-    color: '#6c008dff',
-    fontWeight: '800',
-    fontSize: ms(12),
-  },
-
+  // Cart Button
   headerCartBtn: {
     backgroundColor: '#6c008dff',
-    height: vs(35),
-    width: vs(35),
-    borderRadius: ms(17),
+    height: vs(40),
+    width: vs(40),
+    borderRadius: ms(50),
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#6c008d',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   headerCartText: { fontSize: ms(20), color: 'white' },
-  noResultContainer: { padding: ms(20), alignItems: 'center' },
+
+  scrollContent: {
+    paddingBottom: vs(20),
+    paddingHorizontal: ms(5), // Alignment fix
+  },
+  noResultContainer: {
+    padding: ms(20),
+    alignItems: 'center',
+    marginTop: vs(50),
+  },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
 
+  // --- MODERN CARD STYLES ---
   card: {
     flexDirection: 'row',
-    backgroundColor: '#64008b10',
-    borderRadius: ms(30),
-    marginBottom: vs(15),
-    padding: ms(10),
     alignItems: 'center',
+    padding: ms(12),
+    marginBottom: vs(15),
+    borderRadius: ms(20),
+    backgroundColor: 'white',
+    shadowColor: '#6c008d',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#6c008d10',
   },
   clickableArea: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   image: {
-    width: s(70),
-    height: s(70),
-    borderRadius: ms(25),
-    backgroundColor: '#eee',
+    width: s(75),
+    height: s(75),
+    borderRadius: ms(18),
+    backgroundColor: '#f0f0f0',
   },
   info: {
     flex: 1,
     marginLeft: ms(15),
-    justifyContent: 'space-evenly',
-    height: s(60),
+    justifyContent: 'center',
+    height: s(75),
   },
   name: {
     fontSize: ms(16),
-    fontWeight: '900',
-    color: '#333',
+    fontWeight: '800',
+    color: '#222',
+    marginBottom: vs(2),
   },
   brandText: {
     fontSize: ms(13),
     fontWeight: '600',
     color: '#6c008dff',
-    marginTop: vs(-3),
+    marginBottom: vs(6),
+    opacity: 0.9,
   },
   price: {
-    fontSize: ms(15),
-    color: '#31313181',
-    fontWeight: '700',
-    marginTop: vs(2),
+    fontSize: ms(17),
+    color: '#333',
+    fontWeight: '800',
   },
+
   actionColumn: {
-    width: s(90),
-    height: s(65),
+    width: s(95),
+    height: s(70),
     flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginLeft: ms(5),
+    marginLeft: ms(10),
+    paddingVertical: vs(2),
   },
   addBtnSmall: {
     backgroundColor: '#6c008dff',
-    width: s(90),
-    height: s(30),
+    width: '100%',
+    height: s(32),
     borderRadius: ms(50),
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#6c008d',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  addBtnText: { color: 'white', fontSize: ms(12), fontWeight: '900' },
+  addBtnText: {
+    color: 'white',
+    fontSize: ms(12),
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
   horizontalCounter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#34005218',
+    backgroundColor: '#f5f5f5',
     borderRadius: ms(50),
     width: '100%',
-    height: vs(25),
+    height: vs(28),
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   counterBtn: {
-    marginHorizontal: s(15),
+    width: s(30),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  counterSymbol: { fontSize: ms(20), color: '#555', fontWeight: '900' },
+  counterSymbol: { fontSize: ms(18), color: '#555', fontWeight: '700' },
   counterText: {
     fontSize: ms(15),
-    fontWeight: '900',
+    fontWeight: '800',
     color: '#333',
-    minWidth: s(15),
     textAlign: 'center',
   },
 });

@@ -88,7 +88,7 @@ export default function BannerCarousel() {
   const renderItem = ({ item }: { item: Banner }) => (
     <View style={styles.slide}>
       <TouchableOpacity
-        activeOpacity={0.9}
+        activeOpacity={1}
         onPress={() =>
           navigation.navigate('BannerDetailsScreen', {
             image: item.image_url,
@@ -131,7 +131,7 @@ export default function BannerCarousel() {
 
 const styles = StyleSheet.create({
   container: {
-    height: vs(200),
+    //height: vs(200),
     width: '100%',
     backgroundColor: 'transparent',
     marginTop: vs(-50),
@@ -151,11 +151,11 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: '100%',
     height: '80%',
-    borderRadius: ms(30),
+    borderRadius: ms(45),
     overflow: 'hidden',
-    borderWidth: 5,
+    borderWidth: 7,
     borderColor: '#ffffffff',
-        shadowColor: 'rgba(0, 0, 0, 1)',
+    shadowColor: 'rgba(0, 0, 0, 1)',
     shadowOffset: { width: 0, height: vs(1) },
     shadowOpacity: 1,
     shadowRadius: ms(10),

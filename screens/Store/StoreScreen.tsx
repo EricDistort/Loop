@@ -15,31 +15,25 @@ import { moderateScale as ms } from 'react-native-size-matters';
 // --- CUSTOM COMPONENT IMPORTS ---
 import GreetingScreen from './GreetingScreen';
 import BannersContainer from './BannersContainer';
-import AllProducts from './AllProducts'; // <-- NEW IMPORT
+// 1. IMPORT THE TYPE HERE
+import AllProducts, { Product } from './AllProducts'; 
 
 // --- CONSTANTS ---
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SECTION_1_HEIGHT = SCREEN_HEIGHT * 0.25;
 const SECTION_2_HEIGHT = SCREEN_HEIGHT * 0.25;
 
-type Product = {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  image_url: string;
-  stock_quantity: number;
-};
+// 2. DELETED LOCAL TYPE DEFINITION (It is now imported)
 
 export default function StoreProductsScreen({ navigation }: any) {
   const { user } = useUser();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // --- ANIMATION VALUE (Unchanged) ---
+  // --- ANIMATION VALUE ---
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  // --- DATA FETCHING (Now runs and passes data to AllProducts) ---
+  // --- DATA FETCHING ---
   useEffect(() => {
     fetchProducts();
   }, [user?.store_id]);
@@ -52,9 +46,10 @@ export default function StoreProductsScreen({ navigation }: any) {
         .from('store_products')
         .select(
           `
-                    stock_quantity,
-                    products ( id, name, description, price, image_url )
-                `,
+            stock_quantity,
+            products ( id, name, brand, description, price, image_url ) 
+          `, 
+          // 3. ADDED 'brand' TO THE QUERY ABOVE ^^^
         )
         .eq('store_id', user.store_id);
 
@@ -63,6 +58,7 @@ export default function StoreProductsScreen({ navigation }: any) {
       const formatted = data.map((item: any) => ({
         id: item.products.id,
         name: item.products.name,
+        brand: item.products.brand, // Now this data will actually exist
         description: item.products.description,
         price: item.products.price,
         image_url: item.products.image_url,
@@ -77,7 +73,7 @@ export default function StoreProductsScreen({ navigation }: any) {
     }
   };
 
-  // --- ANIMATION INTERPOLATION (Unchanged) ---
+  // --- ANIMATION INTERPOLATION ---
   const translateOne = scrollY.interpolate({
     inputRange: [-1, 0, SECTION_1_HEIGHT, SECTION_1_HEIGHT + 1],
     outputRange: [0, 0, SECTION_1_HEIGHT, SECTION_1_HEIGHT],
@@ -140,7 +136,7 @@ export default function StoreProductsScreen({ navigation }: any) {
             <BannersContainer />
           </Animated.View>
 
-          {/* --- CONTAINER 3: ALL PRODUCTS (NEW COMPONENT) --- */}
+          {/* --- CONTAINER 3: ALL PRODUCTS --- */}
           <View style={styles.whiteContainer}>
             {loading ? (
               <ActivityIndicator
@@ -174,12 +170,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
-  // --- CONTAINER 3 SPECIFIC (Only styling for the wrapping view remains) ---
   whiteContainer: {
     minHeight: SCREEN_HEIGHT,
     backgroundColor: 'white',
     zIndex: 3,
-   
+    marginTop: -20,
     paddingTop: ms(20),
     paddingHorizontal: ms(15),
     borderTopLeftRadius: ms(20),
