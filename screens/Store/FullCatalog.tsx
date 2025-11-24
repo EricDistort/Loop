@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react'; // Added useRef
 import {
   View,
   Text,
@@ -10,12 +10,16 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
+import LottieView from 'lottie-react-native'; // Added LottieView
 import { supabase } from '../../utils/supabaseClient';
 import {
   scale as s,
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
+
+// Replace with your actual path
+const successAnimation = require('../StoreMedia/Confirmed.json');
 
 // Type definitions
 type Product = {
@@ -44,6 +48,10 @@ export default function FullCatalog({ route, navigation }: any) {
   }>({});
   const [searchQuery, setSearchQuery] = useState('');
 
+  // New state and ref for Lottie
+  const [showSuccess, setShowSuccess] = useState(false);
+  const animationRef = useRef<LottieView>(null);
+
   // Filter products
   const filteredProducts = products.filter(
     product =>
@@ -68,6 +76,7 @@ export default function FullCatalog({ route, navigation }: any) {
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
 
+    // Optimistically reset local quantity before API call
     setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
 
     try {
@@ -97,12 +106,16 @@ export default function FullCatalog({ route, navigation }: any) {
         ]);
       }
 
-      Alert.alert(
-        'Success',
-        `${quantityToAdd} item(s) added to cart successfully!`,
-      );
+      // 🛑 New Success Logic: Show Lottie Animation
+      setShowSuccess(true);
+      animationRef.current?.play();
+
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 1500);
     } catch (error: any) {
       Alert.alert('Error', error.message);
+      // Revert local quantity on failure
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
@@ -216,6 +229,19 @@ export default function FullCatalog({ route, navigation }: any) {
         )}
         <View style={{ height: 50 }} />
       </ScrollView>
+
+      {/* 🛑 LOTTIE OVERLAY */}
+      {showSuccess && (
+        <View style={localStyles.lottieOverlay}>
+          <LottieView
+            ref={animationRef}
+            source={successAnimation}
+            autoPlay
+            loop={false}
+            style={localStyles.lottie}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -327,7 +353,6 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  counterSymbol: { fontSize: ms(20), color: '#555', fontWeight: '900' },
   counterText: {
     fontSize: ms(15),
     fontWeight: '900',
@@ -341,5 +366,17 @@ const localStyles = StyleSheet.create({
     color: '#333',
     minWidth: s(15),
     textAlign: 'center',
+  },
+  // 🛑 LOTTIE STYLES
+  lottieOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF', // Opaque white background
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999, // High zIndex to float on top
+  },
+  lottie: {
+    width: ms(250),
+    height: ms(250),
   },
 });

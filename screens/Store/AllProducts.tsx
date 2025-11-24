@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react'; // 🛑 Imported useEffect
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 import { supabase } from '../../utils/supabaseClient';
 import {
   scale as s,
@@ -15,7 +16,10 @@ import {
   moderateScale as ms,
 } from 'react-native-size-matters';
 
-// Type definitions
+// Replace with your actual path
+const successAnimation = require('../StoreMedia/Confirmed.json');
+
+// Type definitions (Unchanged)
 export type Product = {
   id: number;
   name: string;
@@ -48,6 +52,42 @@ export default function AllProducts({
   }>({});
   const [searchQuery, setSearchQuery] = useState('');
 
+  // New state for Lottie
+  const [showSuccess, setShowSuccess] = useState(false);
+  const animationRef = useRef<LottieView>(null);
+
+  // 🛑 New state for Cart Badge
+  const [hasItemsInCart, setHasItemsInCart] = useState(false);
+
+  // --- HELPER FUNCTION: FETCH CART STATUS ---
+  const fetchCartStatus = async () => {
+    if (!user?.id || !user?.store_id) {
+      setHasItemsInCart(false);
+      return;
+    }
+    try {
+      // Check if ANY item exists for the user in the specified store
+      const { count, error } = await supabase
+        .from('cart_items')
+        .select('id', { count: 'exact', head: true }) // Only fetch head/count
+        .eq('user_id', user.id)
+        .eq('store_id', user.store_id);
+
+      if (error) throw error;
+
+      // Set status based on the count
+      setHasItemsInCart((count || 0) > 0);
+    } catch (e) {
+      console.error('Error fetching cart status:', e);
+      setHasItemsInCart(false);
+    }
+  };
+
+  // 🛑 useEffect to fetch status on load and user change
+  useEffect(() => {
+    fetchCartStatus();
+  }, [user?.id, user?.store_id]);
+
   // --- LOGIC: FILTER PRODUCTS ---
   const filteredProducts = products.filter(
     product =>
@@ -72,6 +112,7 @@ export default function AllProducts({
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
 
+    // Optimistically reset local quantity before API call
     setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
 
     try {
@@ -101,12 +142,17 @@ export default function AllProducts({
         ]);
       }
 
-      Alert.alert(
-        'Success',
-        `${quantityToAdd} item(s) added to cart successfully!`,
-      );
+      // 🛑 Update Cart Status and Show Lottie Animation
+      await fetchCartStatus(); // Re-check cart status after successful insert/update
+      setShowSuccess(true);
+      animationRef.current?.play();
+
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 1500);
     } catch (error: any) {
       Alert.alert('Error', error.message);
+      // Revert on error
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
@@ -124,9 +170,7 @@ export default function AllProducts({
           }
           activeOpacity={0.7}
         >
-          {/* HEIGHT REDUCED HERE */}
           <Image source={{ uri: item.image_url }} style={localStyles.image} />
-          {/* HEIGHT REDUCED HERE */}
           <View style={localStyles.info}>
             <Text style={localStyles.name}>{item.name}</Text>
             {item.brand ? (
@@ -136,9 +180,7 @@ export default function AllProducts({
           </View>
         </TouchableOpacity>
 
-        {/* HEIGHT REDUCED HERE */}
         <View style={localStyles.actionColumn}>
-          {/* BUTTON HEIGHT REDUCED HERE */}
           <TouchableOpacity
             style={localStyles.addBtnSmall}
             onPress={() => commitToCart(item)}
@@ -146,7 +188,6 @@ export default function AllProducts({
             <Text style={localStyles.addBtnText}>ADD</Text>
           </TouchableOpacity>
 
-          {/* COUNTER HEIGHT REDUCED HERE */}
           <View style={localStyles.horizontalCounter}>
             <TouchableOpacity
               style={localStyles.counterBtn}
@@ -178,7 +219,7 @@ export default function AllProducts({
   };
 
   return (
-    <View style={{ width: '100%' }}>
+    <View style={{ width: '100%', flex: 1 }}>
       {/* HEADER */}
       <View style={localStyles.listHeader}>
         <View style={localStyles.searchContainer}>
@@ -195,7 +236,6 @@ export default function AllProducts({
             </TouchableOpacity>
           )}
 
-          {/* "All" Button inside search bar */}
           <TouchableOpacity
             style={localStyles.allButton}
             onPress={() =>
@@ -213,12 +253,12 @@ export default function AllProducts({
           style={localStyles.headerCartBtn}
           onPress={() => navigation.navigate('Cart')}
         >
-          {/* UPDATED: Replaced Emoji Text with Local Image */}
-          {/* REPLACE THE PATH BELOW WITH YOUR ACTUAL IMAGE PATH */}
           <Image
             source={require('../StoreMedia/Cart.png')}
             style={localStyles.cartIcon}
           />
+          {/* 🛑 Conditional Badge Rendering */}
+          {hasItemsInCart && <View style={localStyles.cartBadge} />}
         </TouchableOpacity>
       </View>
 
@@ -230,11 +270,24 @@ export default function AllProducts({
           <Text style={localStyles.emptyText}>No products found.</Text>
         </View>
       )}
+
+      {/* LOTTIE OVERLAY */}
+      {showSuccess && (
+        <View style={localStyles.lottieOverlay}>
+          <LottieView
+            ref={animationRef}
+            source={successAnimation}
+            autoPlay
+            loop={false}
+            style={localStyles.lottie}
+          />
+        </View>
+      )}
     </View>
   );
 }
 
-// --- LOCAL STYLES (HEIGHT ADJUSTMENTS APPLIED HERE) ---
+// --- LOCAL STYLES ---
 const localStyles = StyleSheet.create({
   listHeader: {
     flexDirection: 'row',
@@ -281,12 +334,26 @@ const localStyles = StyleSheet.create({
     borderRadius: ms(17),
     justifyContent: 'center',
     alignItems: 'center',
+    // 🛑 Added position relative to anchor the badge
+    position: 'relative',
   },
   cartIcon: {
     width: ms(20),
     height: ms(20),
     resizeMode: 'contain',
     tintColor: 'white',
+  },
+  // 🛑 New style for the badge
+  cartBadge: {
+    position: 'absolute',
+    top: -ms(3),
+    right: -ms(3),
+    width: ms(15),
+    height: ms(15),
+    borderRadius: ms(10),
+    backgroundColor: '#ff00c8ff', // Purple color
+    borderWidth: 2,
+    borderColor: 'white',
   },
   noResultContainer: { padding: ms(20), alignItems: 'center' },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
@@ -296,16 +363,14 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#64008b10',
     borderRadius: ms(30),
-    marginBottom: vs(15),
+    marginBottom: vs(10),
     padding: ms(10),
     alignItems: 'center',
   },
   clickableArea: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   image: {
-    // REDUCED FROM s(70)
     width: s(55),
     height: s(55),
-    // REDUCED FROM ms(25)
     borderRadius: ms(20),
     backgroundColor: '#eee',
   },
@@ -313,7 +378,6 @@ const localStyles = StyleSheet.create({
     flex: 1,
     marginLeft: ms(15),
     justifyContent: 'space-evenly',
-    // REDUCED FROM s(60)
     height: s(55),
   },
   name: {
@@ -335,7 +399,6 @@ const localStyles = StyleSheet.create({
   },
   actionColumn: {
     width: s(90),
-    // REDUCED FROM s(65)
     height: s(55),
     flexDirection: 'column',
     justifyContent: 'space-between',
@@ -345,7 +408,6 @@ const localStyles = StyleSheet.create({
   addBtnSmall: {
     backgroundColor: '#79009eff',
     width: s(90),
-    // REDUCED FROM s(30)
     height: s(25),
     borderRadius: ms(50),
     justifyContent: 'center',
@@ -359,7 +421,6 @@ const localStyles = StyleSheet.create({
     backgroundColor: '#34005218',
     borderRadius: ms(50),
     width: '100%',
-    // REDUCED FROM vs(25)
     height: vs(20),
   },
   counterBtn: {
@@ -367,7 +428,6 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  counterSymbol: { fontSize: ms(20), color: '#555', fontWeight: '900' },
   counterText: {
     fontSize: ms(15),
     fontWeight: '900',
@@ -381,5 +441,18 @@ const localStyles = StyleSheet.create({
     color: '#333',
     minWidth: s(15),
     textAlign: 'center',
+  },
+
+  // --- LOTTIE STYLES ---
+  lottieOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF', // Opaque white background
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999, // High zIndex to float on top
+  },
+  lottie: {
+    width: ms(250),
+    height: ms(250),
   },
 });
