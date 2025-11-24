@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'; // 🛑 Imported useEffect
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,9 @@ import {
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
-
 // Replace with your actual path
 const successAnimation = require('../StoreMedia/Confirmed.json');
-
-// Type definitions (Unchanged)
+// Type definitions
 export type Product = {
   id: number;
   name: string;
@@ -28,19 +26,17 @@ export type Product = {
   price: number;
   image_url: string;
   stock_quantity: number;
+  category?: string; // 🛑 Added category here as well
 };
-
 export type User = {
   id: string;
   store_id: string;
 };
-
 type AllProductsProps = {
   products: Product[];
   user: User | null;
   navigation: any;
 };
-
 export default function AllProducts({
   products,
   user,
@@ -51,14 +47,11 @@ export default function AllProducts({
     [key: number]: number;
   }>({});
   const [searchQuery, setSearchQuery] = useState('');
-
   // New state for Lottie
   const [showSuccess, setShowSuccess] = useState(false);
   const animationRef = useRef<LottieView>(null);
-
-  // 🛑 New state for Cart Badge
+  // Cart Badge State
   const [hasItemsInCart, setHasItemsInCart] = useState(false);
-
   // --- HELPER FUNCTION: FETCH CART STATUS ---
   const fetchCartStatus = async () => {
     if (!user?.id || !user?.store_id) {
@@ -66,28 +59,21 @@ export default function AllProducts({
       return;
     }
     try {
-      // Check if ANY item exists for the user in the specified store
       const { count, error } = await supabase
         .from('cart_items')
-        .select('id', { count: 'exact', head: true }) // Only fetch head/count
+        .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('store_id', user.store_id);
-
       if (error) throw error;
-
-      // Set status based on the count
       setHasItemsInCart((count || 0) > 0);
     } catch (e) {
       console.error('Error fetching cart status:', e);
       setHasItemsInCart(false);
     }
   };
-
-  // 🛑 useEffect to fetch status on load and user change
   useEffect(() => {
     fetchCartStatus();
   }, [user?.id, user?.store_id]);
-
   // --- LOGIC: FILTER PRODUCTS ---
   const filteredProducts = products.filter(
     product =>
@@ -95,7 +81,6 @@ export default function AllProducts({
       (product.brand &&
         product.brand.toLowerCase().includes(searchQuery.toLowerCase())),
   );
-
   // --- LOCAL QUANTITY HANDLER ---
   const updateLocalQuantity = (productId: number, change: number) => {
     setItemQuantities(prev => {
@@ -104,17 +89,13 @@ export default function AllProducts({
       return { ...prev, [productId]: newQty };
     });
   };
-
   // --- CART COMMIT LOGIC ---
   const commitToCart = async (product: Product) => {
     if (!user) return;
-
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
-
     // Optimistically reset local quantity before API call
     setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
-
     try {
       const { data: existingItem } = await supabase
         .from('cart_items')
@@ -123,9 +104,7 @@ export default function AllProducts({
         .eq('product_id', product.id)
         .eq('store_id', user.store_id)
         .maybeSingle();
-
       const finalNewQty = (existingItem?.quantity || 0) + quantityToAdd;
-
       if (existingItem) {
         await supabase
           .from('cart_items')
@@ -141,12 +120,10 @@ export default function AllProducts({
           },
         ]);
       }
-
-      // 🛑 Update Cart Status and Show Lottie Animation
-      await fetchCartStatus(); // Re-check cart status after successful insert/update
+      // Update Cart Status and Show Lottie Animation
+      await fetchCartStatus();
       setShowSuccess(true);
       animationRef.current?.play();
-
       setTimeout(() => {
         setShowSuccess(false);
       }, 1500);
@@ -156,11 +133,9 @@ export default function AllProducts({
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
-
   // --- RENDER PRODUCT CARD ---
   const renderProductCard = (item: Product) => {
     const quantity = itemQuantities[item.id] || 0;
-
     return (
       <View key={item.id} style={localStyles.card}>
         <TouchableOpacity
@@ -179,7 +154,6 @@ export default function AllProducts({
             <Text style={localStyles.price}>৳{Math.round(item.price)}</Text>
           </View>
         </TouchableOpacity>
-
         <View style={localStyles.actionColumn}>
           <TouchableOpacity
             style={localStyles.addBtnSmall}
@@ -187,7 +161,6 @@ export default function AllProducts({
           >
             <Text style={localStyles.addBtnText}>ADD</Text>
           </TouchableOpacity>
-
           <View style={localStyles.horizontalCounter}>
             <TouchableOpacity
               style={localStyles.counterBtn}
@@ -203,9 +176,7 @@ export default function AllProducts({
                 -
               </Text>
             </TouchableOpacity>
-
             <Text style={localStyles.counterNumber}>{quantity}</Text>
-
             <TouchableOpacity
               style={localStyles.counterBtn}
               onPress={() => updateLocalQuantity(item.id, 1)}
@@ -217,7 +188,6 @@ export default function AllProducts({
       </View>
     );
   };
-
   return (
     <View style={{ width: '100%', flex: 1 }}>
       {/* HEADER */}
@@ -235,7 +205,6 @@ export default function AllProducts({
               <Text style={localStyles.clearIcon}>✕</Text>
             </TouchableOpacity>
           )}
-
           <TouchableOpacity
             style={localStyles.allButton}
             onPress={() =>
@@ -248,7 +217,6 @@ export default function AllProducts({
             <Text style={localStyles.allButtonText}>All</Text>
           </TouchableOpacity>
         </View>
-
         <TouchableOpacity
           style={localStyles.headerCartBtn}
           onPress={() => navigation.navigate('Cart')}
@@ -257,11 +225,9 @@ export default function AllProducts({
             source={require('../StoreMedia/Cart.png')}
             style={localStyles.cartIcon}
           />
-          {/* 🛑 Conditional Badge Rendering */}
           {hasItemsInCart && <View style={localStyles.cartBadge} />}
         </TouchableOpacity>
       </View>
-
       {/* LIST */}
       {filteredProducts.length > 0 ? (
         filteredProducts.map(renderProductCard)
@@ -270,7 +236,6 @@ export default function AllProducts({
           <Text style={localStyles.emptyText}>No products found.</Text>
         </View>
       )}
-
       {/* LOTTIE OVERLAY */}
       {showSuccess && (
         <View style={localStyles.lottieOverlay}>
@@ -286,7 +251,6 @@ export default function AllProducts({
     </View>
   );
 }
-
 // --- LOCAL STYLES ---
 const localStyles = StyleSheet.create({
   listHeader: {
@@ -309,7 +273,6 @@ const localStyles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: ms(14), color: '#333', height: '100%' },
   clearIcon: { fontSize: ms(14), color: '#999', padding: ms(5) },
-
   allButton: {
     backgroundColor: 'white',
     paddingVertical: vs(4),
@@ -326,7 +289,6 @@ const localStyles = StyleSheet.create({
     fontWeight: '800',
     fontSize: ms(12),
   },
-
   headerCartBtn: {
     backgroundColor: '#6c008dff',
     height: vs(35),
@@ -334,7 +296,6 @@ const localStyles = StyleSheet.create({
     borderRadius: ms(17),
     justifyContent: 'center',
     alignItems: 'center',
-    // 🛑 Added position relative to anchor the badge
     position: 'relative',
   },
   cartIcon: {
@@ -343,7 +304,6 @@ const localStyles = StyleSheet.create({
     resizeMode: 'contain',
     tintColor: 'white',
   },
-  // 🛑 New style for the badge
   cartBadge: {
     position: 'absolute',
     top: -ms(3),
@@ -357,8 +317,6 @@ const localStyles = StyleSheet.create({
   },
   noResultContainer: { padding: ms(20), alignItems: 'center' },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
-
-  // --- CARD STYLES ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
@@ -413,7 +371,11 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  addBtnText: { color: 'white', fontSize: ms(12), fontWeight: '900' },
+  addBtnText: {
+    color: 'white',
+    fontSize: ms(12),
+    fontWeight: '900',
+  },
   horizontalCounter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -442,8 +404,6 @@ const localStyles = StyleSheet.create({
     minWidth: s(15),
     textAlign: 'center',
   },
-
-  // --- LOTTIE STYLES ---
   lottieOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#FFFFFF', // Opaque white background

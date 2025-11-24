@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'; // Added useRef
+import React, { useState, useRef, useEffect } from 'react'; // Added useEffect
 import {
   View,
   Text,
@@ -10,17 +10,15 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
-import LottieView from 'lottie-react-native'; // Added LottieView
+import LottieView from 'lottie-react-native';
 import { supabase } from '../../utils/supabaseClient';
 import {
   scale as s,
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
-
 // Replace with your actual path
 const successAnimation = require('../StoreMedia/Confirmed.json');
-
 // Type definitions
 type Product = {
   id: number;
@@ -31,27 +29,49 @@ type Product = {
   image_url: string;
   stock_quantity: number;
 };
-
 type User = {
   id: string;
   store_id: string;
 };
-
 export default function FullCatalog({ route, navigation }: any) {
   const { products, user } = route.params as {
     products: Product[];
     user: User;
   };
-
   const [itemQuantities, setItemQuantities] = useState<{
     [key: number]: number;
   }>({});
   const [searchQuery, setSearchQuery] = useState('');
-
   // New state and ref for Lottie
   const [showSuccess, setShowSuccess] = useState(false);
   const animationRef = useRef<LottieView>(null);
-
+  // 🛑 New state for Cart Badge
+  const [hasItemsInCart, setHasItemsInCart] = useState(false);
+  // --- HELPER FUNCTION: FETCH CART STATUS ---
+  const fetchCartStatus = async () => {
+    if (!user?.id || !user?.store_id) {
+      setHasItemsInCart(false);
+      return;
+    }
+    try {
+      // Check if ANY item exists for the user in the specified store
+      const { count, error } = await supabase
+        .from('cart_items')
+        .select('id', { count: 'exact', head: true }) // Only fetch head/count
+        .eq('user_id', user.id)
+        .eq('store_id', user.store_id);
+      if (error) throw error;
+      // Set status based on the count
+      setHasItemsInCart((count || 0) > 0);
+    } catch (e) {
+      console.error('Error fetching cart status:', e);
+      setHasItemsInCart(false);
+    }
+  };
+  // 🛑 useEffect to fetch status on load and user change
+  useEffect(() => {
+    fetchCartStatus();
+  }, [user?.id, user?.store_id]);
   // Filter products
   const filteredProducts = products.filter(
     product =>
@@ -59,7 +79,6 @@ export default function FullCatalog({ route, navigation }: any) {
       (product.brand &&
         product.brand.toLowerCase().includes(searchQuery.toLowerCase())),
   );
-
   // Update local quantity
   const updateLocalQuantity = (productId: number, change: number) => {
     setItemQuantities(prev => {
@@ -68,17 +87,13 @@ export default function FullCatalog({ route, navigation }: any) {
       return { ...prev, [productId]: newQty };
     });
   };
-
   // Commit to cart
   const commitToCart = async (product: Product) => {
     if (!user) return;
-
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
-
     // Optimistically reset local quantity before API call
     setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
-
     try {
       const { data: existingItem } = await supabase
         .from('cart_items')
@@ -87,9 +102,7 @@ export default function FullCatalog({ route, navigation }: any) {
         .eq('product_id', product.id)
         .eq('store_id', user.store_id)
         .maybeSingle();
-
       const finalNewQty = (existingItem?.quantity || 0) + quantityToAdd;
-
       if (existingItem) {
         await supabase
           .from('cart_items')
@@ -105,11 +118,10 @@ export default function FullCatalog({ route, navigation }: any) {
           },
         ]);
       }
-
-      // 🛑 New Success Logic: Show Lottie Animation
+      // 🛑 Update Cart Status and Show Lottie Animation
+      await fetchCartStatus(); // Re-check cart status after successful insert/update
       setShowSuccess(true);
       animationRef.current?.play();
-
       setTimeout(() => {
         setShowSuccess(false);
       }, 1500);
@@ -119,11 +131,9 @@ export default function FullCatalog({ route, navigation }: any) {
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
-
   // Render product card
   const renderProductCard = (item: Product) => {
     const quantity = itemQuantities[item.id] || 0;
-
     return (
       <View key={item.id} style={localStyles.card}>
         <TouchableOpacity
@@ -144,7 +154,6 @@ export default function FullCatalog({ route, navigation }: any) {
             <Text style={localStyles.price}>৳{Math.round(item.price)}</Text>
           </View>
         </TouchableOpacity>
-
         <View style={localStyles.actionColumn}>
           <TouchableOpacity
             style={localStyles.addBtnSmall}
@@ -152,7 +161,6 @@ export default function FullCatalog({ route, navigation }: any) {
           >
             <Text style={localStyles.addBtnText}>ADD</Text>
           </TouchableOpacity>
-
           <View style={localStyles.horizontalCounter}>
             <TouchableOpacity
               style={localStyles.counterBtn}
@@ -168,9 +176,7 @@ export default function FullCatalog({ route, navigation }: any) {
                 -
               </Text>
             </TouchableOpacity>
-
             <Text style={localStyles.counterNumber}>{quantity}</Text>
-
             <TouchableOpacity
               style={localStyles.counterBtn}
               onPress={() => updateLocalQuantity(item.id, 1)}
@@ -182,11 +188,9 @@ export default function FullCatalog({ route, navigation }: any) {
       </View>
     );
   };
-
   return (
     <View style={localStyles.screenContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
       {/* Header */}
       <View style={localStyles.listHeader}>
         <TextInput
@@ -201,7 +205,6 @@ export default function FullCatalog({ route, navigation }: any) {
             <Text style={localStyles.clearIcon}>✕</Text>
           </TouchableOpacity>
         )}
-
         <TouchableOpacity
           style={localStyles.headerCartBtn}
           onPress={() => navigation.navigate('Cart')}
@@ -210,9 +213,10 @@ export default function FullCatalog({ route, navigation }: any) {
             source={require('../StoreMedia/Cart.png')}
             style={localStyles.cartIcon}
           />
+          {/* 🛑 Conditional Badge Rendering */}
+          {hasItemsInCart && <View style={localStyles.cartBadge} />}
         </TouchableOpacity>
       </View>
-
       {/* Product list */}
       <ScrollView
         contentContainerStyle={localStyles.scrollContent}
@@ -229,7 +233,6 @@ export default function FullCatalog({ route, navigation }: any) {
         )}
         <View style={{ height: 50 }} />
       </ScrollView>
-
       {/* 🛑 LOTTIE OVERLAY */}
       {showSuccess && (
         <View style={localStyles.lottieOverlay}>
@@ -245,7 +248,6 @@ export default function FullCatalog({ route, navigation }: any) {
     </View>
   );
 }
-
 const localStyles = StyleSheet.create({
   screenContainer: {
     flex: 1,
@@ -278,12 +280,26 @@ const localStyles = StyleSheet.create({
     borderRadius: ms(17),
     justifyContent: 'center',
     alignItems: 'center',
+    // 🛑 Added position relative to anchor the badge
+    position: 'relative',
   },
   cartIcon: {
     width: ms(20),
     height: ms(20),
     resizeMode: 'contain',
     tintColor: 'white',
+  },
+  // 🛑 New style for the badge
+  cartBadge: {
+    position: 'absolute',
+    top: -ms(3),
+    right: -ms(3),
+    width: ms(15),
+    height: ms(15),
+    borderRadius: ms(10),
+    backgroundColor: '#ff00c8ff', // Purple color
+    borderWidth: 2,
+    borderColor: 'white',
   },
   scrollContent: { paddingBottom: vs(20), paddingHorizontal: ms(5) },
   noResultContainer: { padding: ms(20), alignItems: 'center' },
