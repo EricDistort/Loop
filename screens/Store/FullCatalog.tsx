@@ -230,7 +230,7 @@ const localStyles = StyleSheet.create({
   listHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: vs(15),
+    marginBottom: vs(20),
     width: '100%',
     gap: ms(10),
     marginTop: vs(15),
@@ -266,7 +266,7 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#64008b10',
     borderRadius: ms(30),
-    marginBottom: vs(15),
+    marginBottom: vs(10),
     padding: ms(10),
     alignItems: 'center',
   },
@@ -305,7 +305,7 @@ const localStyles = StyleSheet.create({
     marginLeft: ms(5),
   },
   addBtnSmall: {
-    backgroundColor: '#6c008dff',
+    backgroundColor: '#79009eff',
     width: s(90),
     height: s(25),
     borderRadius: ms(50),

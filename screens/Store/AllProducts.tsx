@@ -343,7 +343,7 @@ const localStyles = StyleSheet.create({
     marginLeft: ms(5),
   },
   addBtnSmall: {
-    backgroundColor: '#6c008dff',
+    backgroundColor: '#79009eff',
     width: s(90),
     // REDUCED FROM s(30)
     height: s(25),
