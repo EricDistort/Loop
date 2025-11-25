@@ -189,7 +189,7 @@ export default function AllProducts({
     );
   };
   return (
-    <View style={{ width: '100%', flex: 1 }}>
+    <View style={{ width: '100%', flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER */}
       <View style={localStyles.listHeader}>
         <View style={localStyles.searchContainer}>
