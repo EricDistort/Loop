@@ -22,6 +22,7 @@ import UserOrdersScreen from './screens/Order/OrderScreen';
 import ProductDetails from './screens/Store/ProductDetails';
 import FullCatalog from './screens/Store/FullCatalog';
 import OrderDetailScreen from './screens/Order/OrderDetailesScreen';
+import Explore from './screens/Store/Explore';
 
 const RootStack = createNativeStackNavigator();
 const StoreStack = createNativeStackNavigator();
@@ -184,9 +185,10 @@ export default function App() {
           initialRouteName="Onboarding"
           screenOptions={{ headerShown: false }}
         >
-          <RootStack.Screen name="Onboarding" component={Onboarding} />
-          <RootStack.Screen name="Login" component={LoginScreen} />
           <RootStack.Screen name="Main" component={MainTabs} />
+          <RootStack.Screen name="Login" component={LoginScreen} />
+          <RootStack.Screen name="Explore" component={Explore} />
+          <RootStack.Screen name="Onboarding" component={Onboarding} />
         </RootStack.Navigator>
       </NavigationContainer>
     </UserProvider>

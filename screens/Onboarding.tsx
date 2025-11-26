@@ -12,6 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import ScreenWrapper from '../utils/ScreenWrapper';
 
 const { width } = Dimensions.get('window');
+const DARK_PURPLE = '#3c005fff'; // Extracted dark purple color
 
 const slides = [
   {
@@ -94,17 +95,38 @@ export default function OnboardingScreen({ navigation }: any) {
           ))}
         </View>
 
-        {/* Continue button */}
-        <TouchableOpacity onPress={() => navigation.replace('Login')}>
-          <LinearGradient
-            colors={['#340052ff', '#b300a4ff']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.button}
+        {/* Buttons Container */}
+        <View style={styles.buttonContainer}>
+          {/* Continue button */}
+          <TouchableOpacity 
+            style={styles.continueButtonWrapper} 
+            onPress={() => navigation.replace('Login')}
           >
-            <Text style={styles.buttonText}>Continue</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={['#340052ff', '#b300a4ff']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Continue</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Explore button */}
+          <TouchableOpacity
+            style={styles.exploreButtonWrapper}
+            onPress={() => navigation.replace('Explore')}
+          >
+            <LinearGradient
+              colors={['#340052ff', '#b300a4ff']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.button}
+            >
+              <Text style={styles.exploreButtonText}>Skip</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScreenWrapper>
   );
@@ -123,13 +145,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    color: '#3c005fff',
+    color: DARK_PURPLE,
     fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   desc: {
-    color: '#3c005fff',
+    color: DARK_PURPLE,
     fontSize: 16,
     width: '80%',
     textAlign: 'center',
@@ -147,18 +169,45 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   activeDot: {
-    backgroundColor: '#3c005fff',
+    backgroundColor: DARK_PURPLE,
     width: 12,
     height: 12,
   },
+  
+  // --- Button Styles ---
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Space out the two buttons
+    marginHorizontal: 40,
+    marginBottom: 50,
+  },
+  continueButtonWrapper: {
+    flex: 1, // Allows 'Continue' button to take available space
+    marginRight: 10, // Small margin between the two buttons
+  },
+  exploreButtonWrapper: {
+    width: '25%', // Allocate specific width for 'Explore' button
+  },
   button: {
     paddingVertical: 12,
-    marginHorizontal: 40,
     borderRadius: 50,
-    marginBottom: 50,
     elevation: 5,
   },
   buttonText: {
+    textAlign: 'center',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  exploreButton: {
+    paddingVertical: 12,
+    borderRadius: 50,
+    backgroundColor: 'white',
+    borderWidth: 2,
+    borderColor: DARK_PURPLE, // Adding a subtle border for clarity
+    elevation: 5,
+  },
+  exploreButtonText: {
     textAlign: 'center',
     color: 'white',
     fontWeight: 'bold',
