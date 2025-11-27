@@ -31,7 +31,7 @@ type User = {
   store_id: string;
 };
 // Replace with actual path
-const successAnimation = require('../StoreMedia/Confirmed.json');
+const successAnimation = require('../StoreMedia/Success.json');
 export default function ProductDetails({ route, navigation }: any) {
   const { product, user } = route.params as { product: Product; user: User };
   const [quantity, setQuantity] = useState(0);
@@ -441,11 +441,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   lottie: {
-    width: ms(300),
-    height: ms(300),
-    borderRadius: ms(60),
-    borderWidth: 5,
-    borderColor: '#340052ff',
+    width: ms(350),
+    height: ms(350),
+   
   },
   relatedProductsContainer: {
     marginTop: vs(-10),

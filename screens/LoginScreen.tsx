@@ -180,7 +180,7 @@ export default function LoginRegister() {
         {loading && (
           <View style={styles.fullScreenContainer}>
             <LottieView
-              source={require('./LoginMedia/loginanimation5.json')}
+              source={require('./LoginMedia/Loading.json')}
               autoPlay
               loop
               style={styles.fullScreenAnimation}
@@ -189,7 +189,7 @@ export default function LoginRegister() {
         )}
 
         <LinearGradient
-          colors={['#340052ff', '#b300b3ff']}
+          colors={['#340052ff', '#a700b6ff']}
           start={{ x: 0, y: 1 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientCard}

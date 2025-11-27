@@ -103,9 +103,9 @@ export default function OnboardingScreen({ navigation }: any) {
             onPress={() => navigation.replace('Login')}
           >
             <LinearGradient
-              colors={['#340052ff', '#b300a4ff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              colors={['#340052ff', '#8c0099ff']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
               style={styles.button}
             >
               <Text style={styles.buttonText}>Continue</Text>
@@ -118,9 +118,9 @@ export default function OnboardingScreen({ navigation }: any) {
             onPress={() => navigation.replace('Explore')}
           >
             <LinearGradient
-              colors={['#340052ff', '#b300a4ff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              colors={['#340052ff', '#8c0099ff']}
+             start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
               style={styles.button}
             >
               <Text style={styles.exploreButtonText}>Skip</Text>

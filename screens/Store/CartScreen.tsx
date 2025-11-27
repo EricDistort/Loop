@@ -23,6 +23,11 @@ import {
 } from 'react-native-size-matters';
 import Geolocation from 'react-native-geolocation-service';
 import LinearGradient from 'react-native-linear-gradient';
+import LottieView from 'lottie-react-native';
+
+// REPLACE with your actual local Lottie file path
+const emptyCartAnimation = require('../StoreMedia/Cat.json');
+
 type CartItem = {
   id: number;
   product_id: number;
@@ -35,14 +40,19 @@ type CartItem = {
     image_url: string;
   };
 };
+
 export default function CartScreen({ navigation }: any) {
   const { user } = useUser();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
   const [detailedAddress, setDetailedAddress] = useState('');
+  const [locationUrl, setLocationUrl] = useState('');
   const [loadingLocation, setLoadingLocation] = useState(false);
+
   useEffect(() => {
     fetchCart();
   }, [user]);
+
   const fetchCart = async () => {
     if (!user) return;
     const { data, error } = await supabase
@@ -61,24 +71,28 @@ export default function CartScreen({ navigation }: any) {
       `,
       )
       .eq('user_id', user.id);
+
     if (error) {
       console.error(error);
       return Alert.alert('Error', error.message);
     }
     setCartItems(data || []);
   };
+
   const getTotal = () =>
     cartItems.reduce(
       (acc, item) => acc + item.quantity * item.products.price,
       0,
     );
+
   const removeItem = async (id: number) => {
     const { error } = await supabase.from('cart_items').delete().eq('id', id);
     if (error) Alert.alert('Error', error.message);
     else fetchCart();
   };
+
   const decrementQuantity = async (id: number, currentQty: number) => {
-    if (currentQty <= 1) return; // Prevent decreasing below 1
+    if (currentQty <= 1) return;
     const { error } = await supabase
       .from('cart_items')
       .update({ quantity: currentQty - 1 })
@@ -86,6 +100,7 @@ export default function CartScreen({ navigation }: any) {
     if (error) Alert.alert('Error', error.message);
     else fetchCart();
   };
+
   // --- LOCATION HANDLING ---
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
@@ -109,25 +124,23 @@ export default function CartScreen({ navigation }: any) {
     }
     return true;
   };
+
   const getCurrentLocation = async () => {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) {
       Alert.alert('Permission Denied', 'Location permission is required.');
       return;
     }
+
     setLoadingLocation(true);
+
     Geolocation.getCurrentPosition(
       async position => {
         const { latitude, longitude } = position.coords;
-        // Create Google Maps Link (Exact Pinned Location)
-        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-        // Truncate to first 5 words
-        const words = googleMapsUrl.split(' ');
-        const truncatedAddress =
-          words.length > 5
-            ? words.slice(0, 5).join(' ') + '...'
-            : googleMapsUrl;
-        setDetailedAddress(truncatedAddress);
+        const mapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+
+        // Just set state, no alerts
+        setLocationUrl(mapsLink);
         setLoadingLocation(false);
       },
       error => {
@@ -138,40 +151,61 @@ export default function CartScreen({ navigation }: any) {
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
     );
   };
+
   const placeOrder = async () => {
-    if (!user || !detailedAddress.trim()) {
-      return Alert.alert('Required', 'Please enter your detailed address');
+    if (!user) return;
+
+    // VALIDATION CHANGE:
+    // Allow if detailedAddress has text OR locationUrl is set
+    if (!detailedAddress.trim() && !locationUrl) {
+      return Alert.alert(
+        'Required',
+        'Please enter an address OR use the Map button.',
+      );
     }
+
     if (cartItems.length === 0) return Alert.alert('Cart is empty');
+
     const totalAmount = getTotal();
-    const deliveryAddress = `${user.address}, ${detailedAddress}`;
+
+    // Construct address: Handle case where detailedAddress might be empty
+    const baseAddress = user.address || '';
+    const separator = baseAddress && detailedAddress.trim() ? ', ' : '';
+    const finalDeliveryAddress = baseAddress + separator + detailedAddress;
+
     const productsData = cartItems.map(item => ({
       product_id: item.products.id,
       quantity: item.quantity,
       price: item.products.price,
     }));
+
     try {
       const { error } = await supabase.from('purchases').insert([
         {
           user_id: user.id,
           store_id: user.store_id,
           total_amount: totalAmount,
-          delivery_address: deliveryAddress,
-          status: 'Pending',
+          delivery_address: finalDeliveryAddress,
+          location: locationUrl,
+          status: 'Confirmed', // <--- CHANGED FROM 'Pending' TO 'Confirmed'
           products: productsData,
         },
       ]);
+
       if (error) throw error;
+
       // Clear cart
       await supabase.from('cart_items').delete().eq('user_id', user.id);
       setCartItems([]);
       setDetailedAddress('');
+      setLocationUrl('');
       Alert.alert('Success', 'Order placed successfully!');
       navigation.goBack();
     } catch (error: any) {
       Alert.alert('Error placing order', error.message);
     }
   };
+
   const renderItem = ({ item }: { item: CartItem }) => (
     <View style={styles.card}>
       <View style={styles.imageContainer}>
@@ -186,7 +220,6 @@ export default function CartScreen({ navigation }: any) {
         ) : null}
       </View>
       <View style={styles.actionColumn}>
-        {/* Price, Qty, and Minus Button Row */}
         <View style={styles.priceQtyRow}>
           <Text style={styles.quantityTextRight}>{item.quantity}x</Text>
           <Text style={styles.price}>
@@ -210,6 +243,7 @@ export default function CartScreen({ navigation }: any) {
       </View>
     </View>
   );
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -225,43 +259,61 @@ export default function CartScreen({ navigation }: any) {
           />
         ) : (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Your cart is empty.</Text>
+            <LottieView
+              source={emptyCartAnimation}
+              autoPlay
+              loop
+              style={styles.lottieEmpty}
+            />
           </View>
         )}
       </View>
+
       {/* Bottom Half: Checkout */}
       <View style={styles.checkoutContainer}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.row}>
             <Text style={styles.value}>{user?.address || 'N/A'}</Text>
           </View>
-          <Text style={styles.label}>Location</Text>
+          <Text style={styles.label}>Location Details</Text>
+
           {/* Location Input Wrapper */}
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.inputWithIcon}
-              placeholder="House no, Floor, etc."
+              placeholder="House no, Floor, Road, Area..."
               placeholderTextColor="#a08eacff"
               value={detailedAddress}
               onChangeText={setDetailedAddress}
               numberOfLines={1}
             />
+
             <TouchableOpacity
-              style={styles.locationBtn}
+              style={[
+                styles.locationBtn,
+                locationUrl ? { backgroundColor: '#e0ffe0' } : {},
+              ]}
               onPress={getCurrentLocation}
               disabled={loadingLocation}
             >
               {loadingLocation ? (
                 <ActivityIndicator size="small" color="#9100caff" />
               ) : (
-                <Text style={styles.locationBtnText}>Map</Text>
+                <Text
+                  style={[
+                    styles.locationBtnText,
+                    locationUrl ? { color: 'green' } : {},
+                  ]}
+                >
+                  {locationUrl ? 'Pinned' : 'Map'}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity onPress={placeOrder} activeOpacity={0.8}>
             <LinearGradient
-              colors={['#340052ff', '#960096ff']}
+              colors={['#340052ff', '#8c0099ff']}
               start={{ x: 0, y: 1 }}
               end={{ x: 1, y: 0 }}
               style={styles.placeOrderButton}
@@ -276,6 +328,7 @@ export default function CartScreen({ navigation }: any) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -295,12 +348,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
+    //paddingRight: ms(20),
+  },
+  lottieEmpty: {
+    width: ms(500),
+    height: ms(500),
+    marginRight: ms(30),
+    //marginBottom: vs(10),
   },
   emptyText: {
     color: '#888',
     fontSize: ms(16),
+    fontWeight: '600',
   },
-  // Card Styles
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
@@ -384,18 +444,10 @@ const styles = StyleSheet.create({
     fontSize: ms(10),
     fontWeight: 'bold',
   },
-  // Checkout Styles
   checkoutContainer: {
     backgroundColor: '#fff',
-
     padding: ms(20),
     marginBottom: vs(80),
-  },
-  sectionTitle: {
-    fontSize: ms(20),
-    fontWeight: '900',
-    color: '#340052ff',
-    marginBottom: vs(15),
   },
   row: {
     marginBottom: vs(4),
@@ -413,14 +465,13 @@ const styles = StyleSheet.create({
     fontSize: ms(15),
     fontWeight: '500',
   },
-  // Input with Icon Styles
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#64008b10',
     borderRadius: ms(20),
     marginBottom: vs(10),
-    paddingRight: ms(10), // Space for icon
+    paddingRight: ms(10),
   },
   inputWithIcon: {
     flex: 1,
@@ -443,35 +494,7 @@ const styles = StyleSheet.create({
     fontSize: ms(12),
     fontWeight: 'bold',
   },
-  locationIcon: {
-    width: ms(24),
-    height: ms(24),
-    resizeMode: 'contain',
-    tintColor: '#6c008dff',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginVertical: vs(10),
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: vs(10),
-  },
-  totalLabel: {
-    fontSize: ms(18),
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  totalValue: {
-    fontSize: ms(24),
-    fontWeight: '900',
-    color: '#340052ff',
-  },
   placeOrderButton: {
-    // backgroundColor removed to allow gradient to show
     paddingVertical: vs(10),
     borderRadius: ms(22),
     marginHorizontal: ms(20),
@@ -481,6 +504,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '900',
     fontSize: ms(18),
-    //letterSpacing: 1,
   },
 });

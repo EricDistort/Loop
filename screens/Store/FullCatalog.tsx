@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'; // Added useEffect
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,8 +17,10 @@ import {
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
+
 // Replace with your actual path
-const successAnimation = require('../StoreMedia/Confirmed.json');
+const successAnimation = require('../StoreMedia/Success.json');
+
 // Type definitions
 type Product = {
   id: number;
@@ -29,24 +31,30 @@ type Product = {
   image_url: string;
   stock_quantity: number;
 };
+
 type User = {
   id: string;
   store_id: string;
 };
+
 export default function FullCatalog({ route, navigation }: any) {
   const { products, user } = route.params as {
     products: Product[];
     user: User;
   };
+
   const [itemQuantities, setItemQuantities] = useState<{
     [key: number]: number;
   }>({});
   const [searchQuery, setSearchQuery] = useState('');
+
   // New state and ref for Lottie
   const [showSuccess, setShowSuccess] = useState(false);
   const animationRef = useRef<LottieView>(null);
-  // 🛑 New state for Cart Badge
+
+  // Cart Badge State
   const [hasItemsInCart, setHasItemsInCart] = useState(false);
+
   // --- HELPER FUNCTION: FETCH CART STATUS ---
   const fetchCartStatus = async () => {
     if (!user?.id || !user?.store_id) {
@@ -54,24 +62,24 @@ export default function FullCatalog({ route, navigation }: any) {
       return;
     }
     try {
-      // Check if ANY item exists for the user in the specified store
       const { count, error } = await supabase
         .from('cart_items')
-        .select('id', { count: 'exact', head: true }) // Only fetch head/count
+        .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('store_id', user.store_id);
+
       if (error) throw error;
-      // Set status based on the count
       setHasItemsInCart((count || 0) > 0);
     } catch (e) {
       console.error('Error fetching cart status:', e);
       setHasItemsInCart(false);
     }
   };
-  // 🛑 useEffect to fetch status on load and user change
+
   useEffect(() => {
     fetchCartStatus();
   }, [user?.id, user?.store_id]);
+
   // Filter products
   const filteredProducts = products.filter(
     product =>
@@ -79,6 +87,7 @@ export default function FullCatalog({ route, navigation }: any) {
       (product.brand &&
         product.brand.toLowerCase().includes(searchQuery.toLowerCase())),
   );
+
   // Update local quantity
   const updateLocalQuantity = (productId: number, change: number) => {
     setItemQuantities(prev => {
@@ -87,13 +96,16 @@ export default function FullCatalog({ route, navigation }: any) {
       return { ...prev, [productId]: newQty };
     });
   };
+
   // Commit to cart
   const commitToCart = async (product: Product) => {
     if (!user) return;
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
+
     // Optimistically reset local quantity before API call
     setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
+
     try {
       const { data: existingItem } = await supabase
         .from('cart_items')
@@ -102,7 +114,9 @@ export default function FullCatalog({ route, navigation }: any) {
         .eq('product_id', product.id)
         .eq('store_id', user.store_id)
         .maybeSingle();
+
       const finalNewQty = (existingItem?.quantity || 0) + quantityToAdd;
+
       if (existingItem) {
         await supabase
           .from('cart_items')
@@ -118,8 +132,9 @@ export default function FullCatalog({ route, navigation }: any) {
           },
         ]);
       }
-      // 🛑 Update Cart Status and Show Lottie Animation
-      await fetchCartStatus(); // Re-check cart status after successful insert/update
+
+      // Update Cart Status and Show Lottie Animation
+      await fetchCartStatus();
       setShowSuccess(true);
       animationRef.current?.play();
       setTimeout(() => {
@@ -131,6 +146,7 @@ export default function FullCatalog({ route, navigation }: any) {
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
+
   // Render product card
   const renderProductCard = (item: Product) => {
     const quantity = itemQuantities[item.id] || 0;
@@ -188,6 +204,7 @@ export default function FullCatalog({ route, navigation }: any) {
       </View>
     );
   };
+
   return (
     <View style={localStyles.screenContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -213,10 +230,10 @@ export default function FullCatalog({ route, navigation }: any) {
             source={require('../StoreMedia/Cart.png')}
             style={localStyles.cartIcon}
           />
-          {/* 🛑 Conditional Badge Rendering */}
           {hasItemsInCart && <View style={localStyles.cartBadge} />}
         </TouchableOpacity>
       </View>
+
       {/* Product list */}
       <ScrollView
         contentContainerStyle={localStyles.scrollContent}
@@ -233,7 +250,8 @@ export default function FullCatalog({ route, navigation }: any) {
         )}
         <View style={{ height: 50 }} />
       </ScrollView>
-      {/* 🛑 LOTTIE OVERLAY */}
+
+      {/* LOTTIE OVERLAY */}
       {showSuccess && (
         <View style={localStyles.lottieOverlay}>
           <LottieView
@@ -248,6 +266,7 @@ export default function FullCatalog({ route, navigation }: any) {
     </View>
   );
 }
+
 const localStyles = StyleSheet.create({
   screenContainer: {
     flex: 1,
@@ -280,7 +299,6 @@ const localStyles = StyleSheet.create({
     borderRadius: ms(17),
     justifyContent: 'center',
     alignItems: 'center',
-    // 🛑 Added position relative to anchor the badge
     position: 'relative',
   },
   cartIcon: {
@@ -289,7 +307,6 @@ const localStyles = StyleSheet.create({
     resizeMode: 'contain',
     tintColor: 'white',
   },
-  // 🛑 New style for the badge
   cartBadge: {
     position: 'absolute',
     top: -ms(3),
@@ -297,33 +314,45 @@ const localStyles = StyleSheet.create({
     width: ms(15),
     height: ms(15),
     borderRadius: ms(10),
-    backgroundColor: '#ff00c8ff', // Purple color
+    backgroundColor: '#ff00c8ff', 
     borderWidth: 2,
     borderColor: 'white',
   },
   scrollContent: { paddingBottom: vs(20), paddingHorizontal: ms(5) },
   noResultContainer: { padding: ms(20), alignItems: 'center' },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
+  
+  // --- UPDATED CARD STYLES ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
     borderRadius: ms(30),
     marginBottom: vs(10),
-    padding: ms(10),
+    padding: 0, // Removed padding to flush image
+    paddingRight: ms(10), // Keep right padding for balance
     alignItems: 'center',
+    overflow: 'hidden', // Ensures image stays within rounded corners
+    height: s(75), // Fixed height
   },
-  clickableArea: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  clickableArea: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center',
+    height: '100%',
+  },
   image: {
-    width: s(55),
-    height: s(55),
-    borderRadius: ms(20),
+    width: s(75),
+    height: s(75),
     backgroundColor: '#eee',
+    borderRadius: 30,
+    // borderRadius removed, handled by parent overflow
   },
   info: {
     flex: 1,
     marginLeft: ms(15),
     justifyContent: 'space-evenly',
-    height: s(55),
+    height: s(75),
+    paddingVertical: ms(5),
   },
   name: { fontSize: ms(16), fontWeight: '900', color: '#333' },
   brandText: {
@@ -340,11 +369,12 @@ const localStyles = StyleSheet.create({
   },
   actionColumn: {
     width: s(90),
-    height: s(55),
+    height: s(75),
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     alignItems: 'center',
     marginLeft: ms(5),
+    paddingVertical: ms(5),
   },
   addBtnSmall: {
     backgroundColor: '#79009eff',
@@ -383,16 +413,15 @@ const localStyles = StyleSheet.create({
     minWidth: s(15),
     textAlign: 'center',
   },
-  // 🛑 LOTTIE STYLES
   lottieOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF', // Opaque white background
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 999, // High zIndex to float on top
+    zIndex: 999,
   },
   lottie: {
-    width: ms(250),
-    height: ms(250),
+    width: ms(350),
+    height: ms(350),
   },
 });

@@ -1,85 +1,482 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Alert,
+  TouchableOpacity,
+  Linking,
+  StatusBar,
+  ActivityIndicator,
+} from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
-import ScreenWrapper from '../../utils/ScreenWrapper';
 import {
   scale as s,
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
+import LottieView from 'lottie-react-native';
 
-type OrderDetail = {
-  id: number;
-  total_amount: number;
-  status: string;
-  address: string;
-  detailed_address: string;
-  created_at: string;
-  updated_at: string;
+// --- LOTTIE ANIMATION IMPORTS (Ensure these exist in your folder) ---
+const animConfirmed = require('./OrderMedia/Confirmed.json');
+const animPacked = require('./OrderMedia/Packedone.json');
+const animOutForDelivery = require('./OrderMedia/OutForDelivery.json');
+const animDelivered = require('./OrderMedia/Delivered.json');
+// Optional: A fallback or specific one for Cancelled
+const animCancelled = require('./OrderMedia/Cancelled.json'); // Reusing empty or specific cancelled one
+
+type JsonOrderItem = {
+  product_id: number;
+  quantity: number;
+  price: number;
 };
 
-export default function OrderDetailScreen({ route }: any) {
+type ProductInfo = {
+  id: number;
+  name: string;
+  brand: string;
+  image_url: string;
+};
+
+type DisplayItem = {
+  quantity: number;
+  price: number;
+  productDetails?: ProductInfo;
+};
+
+type OrderDetails = {
+  id: number;
+  status: string;
+  delivery_address: string;
+  location: string | null;
+  total_amount: number;
+  created_at: string;
+  products: JsonOrderItem[];
+};
+
+export default function OrderDetailScreen({ route, navigation }: any) {
   const { orderId } = route.params;
-  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [order, setOrder] = useState<OrderDetails | null>(null);
+  const [displayItems, setDisplayItems] = useState<DisplayItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchOrderDetail();
-  }, []);
+    fetchOrderDetails();
+  }, [orderId]);
 
-  const fetchOrderDetail = async () => {
+  const fetchOrderDetails = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: orderData, error: orderError } = await supabase
         .from('purchases')
         .select('*')
         .eq('id', orderId)
-        .maybeSingle();
+        .single();
 
-      if (error || !data) throw error || new Error('Order not found');
+      if (orderError) throw orderError;
 
-      setOrder(data);
+      const currentOrder = orderData as OrderDetails;
+      setOrder(currentOrder);
+
+      const productIds = currentOrder.products.map(p => p.product_id);
+
+      if (productIds.length > 0) {
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('id, name, brand, image_url')
+          .in('id', productIds);
+
+        if (productsError) throw productsError;
+
+        const mergedItems: DisplayItem[] = currentOrder.products.map(jsonItem => {
+          const details = productsData?.find(p => p.id === jsonItem.product_id);
+          return {
+            quantity: jsonItem.quantity,
+            price: jsonItem.price,
+            productDetails: details,
+          };
+        });
+
+        setDisplayItems(mergedItems);
+      }
     } catch (error: any) {
       Alert.alert('Error', error.message);
+      navigation.goBack();
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!order) return null;
+  const openLocation = () => {
+    if (order?.location) {
+      Linking.openURL(order.location).catch(err =>
+        Alert.alert('Error', 'Could not open map link'),
+      );
+    }
+  };
+
+  const handleCancelOrder = () => {
+    Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes, Cancel',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const { error } = await supabase
+              .from('purchases')
+              .update({ status: 'Cancelled' })
+              .eq('id', orderId);
+
+            if (error) throw error;
+
+            if (order) {
+              setOrder({ ...order, status: 'Cancelled' });
+            }
+            Alert.alert('Success', 'Order has been cancelled.');
+          } catch (err: any) {
+            Alert.alert('Error', err.message);
+          }
+        },
+      },
+    ]);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+      case 'confirmed':
+        return '#ff9900';
+      case 'packed':
+        return '#6c008dff'; // Purple
+      case 'out for delivery':
+        return '#007bff'; // Blue
+      case 'delivered':
+        return '#00aa00'; // Green
+      case 'cancelled':
+        return '#ff0000';
+      default:
+        return '#6c008dff';
+    }
+  };
+
+  // --- ANIMATION SELECTION LOGIC ---
+  const getStatusAnimation = (status: string = '') => {
+    const s = status.toLowerCase();
+    
+    if (s === 'cancelled') return animCancelled;
+    if (s === 'delivered') return animDelivered;
+    if (s.includes('out') || s.includes('delivery')) return animOutForDelivery;
+    if (s === 'packed') return animPacked;
+    
+    // Default (Pending/Confirmed)
+    return animConfirmed;
+  };
+
+  const showCancelButton =
+    order?.status === 'Pending' || order?.status === 'Confirmed';
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6c008dff" />
+      </View>
+    );
+  }
 
   return (
-    <ScreenWrapper>
-      <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.title}>Order #{order.id}</Text>
-        <Text style={styles.status}>Status: {order.status}</Text>
-        <Text style={styles.address}>Address: {order.address}</Text>
-        <Text style={styles.address}>Details: {order.detailed_address}</Text>
-        <Text style={styles.amount}>
-          Total Amount: ${order.total_amount.toFixed(2)}
-        </Text>
-        <Text style={styles.date}>
-          Ordered on: {new Date(order.created_at).toLocaleString()}
-        </Text>
-        <Text style={styles.date}>
-          Last Updated: {new Date(order.updated_at).toLocaleString()}
-        </Text>
-      </SafeAreaView>
-    </ScreenWrapper>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+
+      {/* 1. Header Lottie Animation */}
+      <View style={styles.headerImageContainer}>
+        <LottieView
+          source={getStatusAnimation(order?.status)}
+          autoPlay
+          loop
+          style={styles.lottieHeader}
+          resizeMode="cover"
+        />
+      </View>
+
+      {/* 2. Status & Cancel Button Row */}
+      <View style={styles.metaRow}>
+        <View
+          style={[
+            styles.statusBadge,
+            { borderColor: getStatusColor(order?.status || '') },
+          ]}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              { color: getStatusColor(order?.status || '') },
+            ]}
+          >
+            {order?.status}
+          </Text>
+        </View>
+
+        {showCancelButton && (
+          <TouchableOpacity
+            onPress={handleCancelOrder}
+            style={[
+              styles.statusBadge,
+              { borderColor: '#ff0000', marginLeft: ms(10) },
+            ]}
+          >
+            <Text style={[styles.statusText, { color: '#ff0000' }]}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* 3. Items Section */}
+      <View style={styles.section}>
+        
+
+        <View style={styles.itemsScrollContainer}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {displayItems.map((item, index) => (
+              <View key={index} style={styles.card}>
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: item.productDetails?.image_url }}
+                    style={styles.itemImage}
+                  />
+                </View>
+                <View style={styles.info}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {item.productDetails?.name || 'Unknown Product'}
+                  </Text>
+                  {item.productDetails?.brand ? (
+                    <Text style={styles.brandText}>
+                      {item.productDetails.brand}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.actionColumn}>
+                  <View style={styles.priceQtyRow}>
+                    <Text style={styles.quantityTextRight}>
+                      {item.quantity}x
+                    </Text>
+                    <Text style={styles.price}>
+                      ৳{(item.quantity * item.price).toFixed(0)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.totalRow}>
+          <Text style={styles.orderIdBottom}>Order #{order?.id}</Text>
+          <View style={styles.totalRightContainer}>
+            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalValue}>
+              ৳{order?.total_amount.toFixed(0)}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* 4. Delivery Details */}
+      <View style={styles.addressContainer}>
+        <Text style={styles.sectionTitle}>Delivery Details</Text>
+
+        <View style={styles.addressRow}>
+          <View style={{ flex: 1, marginRight: ms(10) }}>
+            <Text style={styles.detailValue}>
+              {order?.delivery_address || 'No address provided'}
+            </Text>
+          </View>
+
+          {order?.location ? (
+            <TouchableOpacity style={styles.locationBtn} onPress={openLocation}>
+              <Text style={styles.locationBtnText}>Location</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, padding: ms(10), backgroundColor: 'black' },
-  title: {
-    fontSize: ms(22),
-    fontWeight: 'bold',
-    color: '#00c6ff',
-    marginBottom: vs(6),
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
   },
-  status: { fontSize: ms(16), color: '#00ff00', marginBottom: vs(4) },
-  address: { fontSize: ms(14), color: '#00c6ff', marginBottom: vs(2) },
-  amount: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  headerImageContainer: {
+    width: '100%',
+    height: vs(320),
+    backgroundColor: '#ffffff', // White background for transparent Lotties
+    //marginBottom: vs(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lottieHeader: {
+    width: '90%',
+    height: '90%',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: vs(-10),
+    paddingHorizontal: ms(20),
+    marginBottom: vs(10), 
+  },
+  statusBadge: {
+    paddingVertical: vs(4),
+    paddingHorizontal: ms(12),
+    borderRadius: ms(20),
+    borderWidth: 1.5,
+    backgroundColor: '#fff',
+  },
+  statusText: {
+    fontSize: ms(12),
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
+  section: {
+    paddingHorizontal: ms(20),
+    //marginBottom: vs(10),
+  },
+  sectionTitle: {
     fontSize: ms(16),
-    color: '#ff00ff',
-    fontWeight: 'bold',
-    marginTop: vs(6),
+    fontWeight: '900',
+    color: '#340052ff',
+    //marginBottom: vs(5),
   },
-  date: { fontSize: ms(12), color: '#00c6ff', marginTop: vs(2) },
+  itemsScrollContainer: {
+    maxHeight: vs(120),
+  },
+  card: {
+    flexDirection: 'row',
+    backgroundColor: '#64008b10',
+    borderRadius: ms(20),
+    marginBottom: vs(10),
+    padding: 0,
+    paddingRight: ms(10),
+    alignItems: 'center',
+    overflow: 'hidden',
+    height: s(60),
+  },
+  imageContainer: {
+    backgroundColor: '#fff',
+    borderRadius: ms(20),
+    overflow: 'hidden',
+  },
+  itemImage: {
+    width: s(60),
+    height: s(60),
+    backgroundColor: '#eee',
+    borderRadius: 20,
+  },
+  info: {
+    flex: 1,
+    marginLeft: ms(12),
+    justifyContent: 'center',
+    height: s(50),
+  },
+  name: {
+    fontSize: ms(15),
+    fontWeight: '900',
+    color: '#333',
+  },
+  brandText: {
+    fontSize: ms(12),
+    fontWeight: '600',
+    color: '#6c008dff',
+  },
+  actionColumn: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    height: s(50),
+    paddingRight: ms(5),
+  },
+  priceQtyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quantityTextRight: {
+    fontSize: ms(13),
+    color: '#555',
+    marginRight: ms(8),
+  },
+  price: {
+    fontSize: ms(16),
+    color: '#340052ff',
+    fontWeight: '900',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    //marginTop: vs(15),
+    marginBottom: vs(10),
+    paddingRight: ms(5),
+  },
+  orderIdBottom: {
+    fontSize: ms(16),
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  totalRightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  totalLabel: {
+    fontSize: ms(16),
+    fontWeight: 'bold',
+    color: '#333',
+    marginRight: ms(10),
+  },
+  totalValue: {
+    fontSize: ms(22),
+    fontWeight: '900',
+    color: '#340052ff',
+  },
+  addressContainer: {
+    paddingHorizontal: ms(20),
+    paddingTop: vs(20),
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingBottom: vs(30),
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  detailValue: {
+    fontSize: ms(14),
+    color: '#333',
+    lineHeight: ms(20),
+  },
+  locationBtn: {
+    backgroundColor: '#e0ffe0',
+    paddingVertical: vs(8),
+    paddingHorizontal: ms(12),
+    borderRadius: ms(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#00aa0020',
+  },
+  locationBtnText: {
+    color: 'green',
+    fontWeight: 'bold',
+    fontSize: ms(12),
+  },
 });

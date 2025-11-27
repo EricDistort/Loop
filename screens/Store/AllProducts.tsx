@@ -15,8 +15,10 @@ import {
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
+
 // Replace with your actual path
-const successAnimation = require('../StoreMedia/Confirmed.json');
+const successAnimation = require('../StoreMedia/Success.json');
+
 // Type definitions
 export type Product = {
   id: number;
@@ -26,17 +28,20 @@ export type Product = {
   price: number;
   image_url: string;
   stock_quantity: number;
-  category?: string; // 🛑 Added category here as well
+  category?: string;
 };
+
 export type User = {
   id: string;
   store_id: string;
 };
+
 type AllProductsProps = {
   products: Product[];
   user: User | null;
   navigation: any;
 };
+
 export default function AllProducts({
   products,
   user,
@@ -52,6 +57,7 @@ export default function AllProducts({
   const animationRef = useRef<LottieView>(null);
   // Cart Badge State
   const [hasItemsInCart, setHasItemsInCart] = useState(false);
+
   // --- HELPER FUNCTION: FETCH CART STATUS ---
   const fetchCartStatus = async () => {
     if (!user?.id || !user?.store_id) {
@@ -71,9 +77,11 @@ export default function AllProducts({
       setHasItemsInCart(false);
     }
   };
+
   useEffect(() => {
     fetchCartStatus();
   }, [user?.id, user?.store_id]);
+
   // --- LOGIC: FILTER PRODUCTS ---
   const filteredProducts = products.filter(
     product =>
@@ -81,6 +89,7 @@ export default function AllProducts({
       (product.brand &&
         product.brand.toLowerCase().includes(searchQuery.toLowerCase())),
   );
+
   // --- LOCAL QUANTITY HANDLER ---
   const updateLocalQuantity = (productId: number, change: number) => {
     setItemQuantities(prev => {
@@ -89,6 +98,7 @@ export default function AllProducts({
       return { ...prev, [productId]: newQty };
     });
   };
+
   // --- CART COMMIT LOGIC ---
   const commitToCart = async (product: Product) => {
     if (!user) return;
@@ -133,6 +143,7 @@ export default function AllProducts({
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
+
   // --- RENDER PRODUCT CARD ---
   const renderProductCard = (item: Product) => {
     const quantity = itemQuantities[item.id] || 0;
@@ -188,6 +199,7 @@ export default function AllProducts({
       </View>
     );
   };
+
   return (
     <View style={{ width: '100%', flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER */}
@@ -251,6 +263,7 @@ export default function AllProducts({
     </View>
   );
 }
+
 // --- LOCAL STYLES ---
 const localStyles = StyleSheet.create({
   listHeader: {
@@ -317,26 +330,38 @@ const localStyles = StyleSheet.create({
   },
   noResultContainer: { padding: ms(20), alignItems: 'center' },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
+  
+  // --- CARD STYLES MODIFIED ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
     borderRadius: ms(30),
     marginBottom: vs(10),
-    padding: ms(10),
+    padding: 0, // Removed padding to flush image
+    paddingRight: ms(10), // Keep right padding for balance
     alignItems: 'center',
+    overflow: 'hidden', // Ensures image stays within rounded corners
+    height: s(75), // Fixed height to match image
   },
-  clickableArea: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  clickableArea: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center',
+    height: '100%',
+  },
   image: {
-    width: s(55),
-    height: s(55),
-    borderRadius: ms(20),
+    width: s(75),
+    height: s(75),
+    // borderRadius removed here, handled by card overflow
     backgroundColor: '#eee',
+    borderRadius: 30,
   },
   info: {
     flex: 1,
     marginLeft: ms(15),
     justifyContent: 'space-evenly',
-    height: s(55),
+    height: s(75), // Match image height
+    paddingVertical: ms(5), // Add internal padding since card padding is gone
   },
   name: {
     fontSize: ms(16),
@@ -357,11 +382,12 @@ const localStyles = StyleSheet.create({
   },
   actionColumn: {
     width: s(90),
-    height: s(55),
+    height: s(75), // Match image height
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     alignItems: 'center',
     marginLeft: ms(5),
+    paddingVertical: ms(5), // Add internal padding
   },
   addBtnSmall: {
     backgroundColor: '#79009eff',
@@ -412,7 +438,7 @@ const localStyles = StyleSheet.create({
     zIndex: 999, // High zIndex to float on top
   },
   lottie: {
-    width: ms(250),
-    height: ms(250),
+    width: ms(350),
+    height: ms(350),
   },
 });

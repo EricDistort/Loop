@@ -89,7 +89,7 @@ function MainTabs() {
           },
           tabBarBackground: () => (
             <LinearGradient
-              colors={['#340052ff', '#960096ff']}
+              colors={['#340052ff', '#8c0099ff']}
               start={{ x: 0, y: 1 }}
               end={{ x: 1, y: 0 }}
               style={{
@@ -131,9 +131,10 @@ function MainTabs() {
             },
           }}
         />
+        
         <Tab.Screen
-          name="Profile"
-          component={ProfileStackScreen}
+          name="Orders"
+          component={OrderStackScreen}
           options={{
             tabBarIcon: ({ focused }) => {
               const size = focused ? s(29) : s(24);
@@ -152,8 +153,8 @@ function MainTabs() {
           }}
         />
         <Tab.Screen
-          name="Orders"
-          component={OrderStackScreen}
+          name="Profile"
+          component={ProfileStackScreen}
           options={{
             tabBarIcon: ({ focused }) => {
               const size = focused ? s(29) : s(24);
