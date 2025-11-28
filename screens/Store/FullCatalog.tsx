@@ -31,7 +31,7 @@ type Product = {
   price: number;
   image_url: string;
   stock_quantity: number;
-  category?: string; 
+  category?: string;
 };
 
 type User = {
@@ -40,26 +40,37 @@ type User = {
 };
 
 export default function FullCatalog({ route, navigation }: any) {
-  const { products: initialProducts, user } = route.params as {
+  // 1. Destructure initialCategory from params (defaults to undefined)
+  const {
+    products: initialProducts,
+    user,
+    initialCategory,
+  } = route.params as {
     products: Product[];
     user: User;
+    initialCategory?: string;
   };
 
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
-  const [itemQuantities, setItemQuantities] = useState<{ [key: number]: number }>({});
+  const [itemQuantities, setItemQuantities] = useState<{
+    [key: number]: number;
+  }>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  // 2. Initialize state with passed category, or fallback to 'All'
+  const [selectedCategory, setSelectedCategory] = useState(
+    initialCategory || 'All',
+  );
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [hasItemsInCart, setHasItemsInCart] = useState(false);
-  
+
   const animationRef = useRef<LottieView>(null);
 
   useEffect(() => {
     const fetchFreshProducts = async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*'); 
-      
+      const { data, error } = await supabase.from('products').select('*');
+
       if (!error && data) {
         setProducts(data);
       }
@@ -95,12 +106,14 @@ export default function FullCatalog({ route, navigation }: any) {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = 
+    const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+      (product.brand &&
+        product.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+
     const productCategory = product.category || 'General';
-    const matchesCategory = selectedCategory === 'All' || productCategory === selectedCategory;
+    const matchesCategory =
+      selectedCategory === 'All' || productCategory === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -208,7 +221,14 @@ export default function FullCatalog({ route, navigation }: any) {
               onPress={() => updateLocalQuantity(item.id, -1)}
               disabled={quantity === 0}
             >
-              <Text style={[localStyles.counterText, { opacity: quantity === 0 ? 0.3 : 1 }]}>-</Text>
+              <Text
+                style={[
+                  localStyles.counterText,
+                  { opacity: quantity === 0 ? 0.3 : 1 },
+                ]}
+              >
+                -
+              </Text>
             </PopButton>
             <Text style={localStyles.counterNumber}>{quantity}</Text>
             <PopButton
@@ -223,29 +243,40 @@ export default function FullCatalog({ route, navigation }: any) {
     );
   };
 
+  // 3. Render Category Pill (Handles selection within this screen)
   const renderCategoryPill = (cat: string) => {
     const isSelected = selectedCategory === cat;
+
     return (
-        <PopButton 
-            key={cat} 
-            onPress={() => setSelectedCategory(cat)}
-            style={{ marginRight: ms(10) }}
-        >
-            {isSelected ? (
-                <LinearGradient
-                    colors={['#4c0079ff', '#a200b1ff']}
-                    start={{ x: 0, y: 1 }}
-                    end={{ x: 1, y: 0 }}
-                    style={localStyles.categoryPill}
-                >
-                    <Text style={[localStyles.categoryText, { color: 'white' }]}>{cat}</Text>
-                </LinearGradient>
-            ) : (
-                <View style={[localStyles.categoryPill, localStyles.categoryPillUnselected]}>
-                    <Text style={[localStyles.categoryText, { color: '#666' }]}>{cat}</Text>
-                </View>
-            )}
-        </PopButton>
+      <PopButton
+        key={cat}
+        onPress={() => setSelectedCategory(cat)}
+        style={{ marginRight: ms(10) }}
+      >
+        {isSelected ? (
+          <LinearGradient
+            colors={['#4c0079ff', '#a200b1ff']}
+            start={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 0 }}
+            style={localStyles.categoryPill}
+          >
+            <Text style={[localStyles.categoryText, { color: 'white' }]}>
+              {cat}
+            </Text>
+          </LinearGradient>
+        ) : (
+          <View
+            style={[
+              localStyles.categoryPill,
+              localStyles.categoryPillUnselected,
+            ]}
+          >
+            <Text style={[localStyles.categoryText, { color: '#666' }]}>
+              {cat}
+            </Text>
+          </View>
+        )}
+      </PopButton>
     );
   };
 
@@ -263,11 +294,13 @@ export default function FullCatalog({ route, navigation }: any) {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
               <Text style={localStyles.clearIcon}>✕</Text>
             </TouchableOpacity>
           )}
+
           <PopButton
             style={localStyles.headerCartBtn}
             onPress={() => navigation.navigate('Cart')}
@@ -285,17 +318,17 @@ export default function FullCatalog({ route, navigation }: any) {
       <ScrollView
         contentContainerStyle={localStyles.scrollContent}
         showsVerticalScrollIndicator={false}
-        //stickyHeaderIndices={[1]} 
+        stickyHeaderIndices={[0]}
       >
-        {/* CATEGORY SELECTOR - FULL WIDTH */}
+        {/* CATEGORY SELECTOR */}
         <View style={localStyles.categoryContainer}>
-            <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: ms(20) }} // Padding applied here instead
-            >
-                {categories.map(renderCategoryPill)}
-            </ScrollView>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: ms(20) }}
+          >
+            {categories.map(renderCategoryPill)}
+          </ScrollView>
         </View>
 
         {filteredProducts.length > 0 ? (
@@ -393,17 +426,15 @@ const localStyles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'white',
   },
-  
-  // --- UPDATED LAYOUT STYLES ---
   scrollContent: {
-    // Removed paddingHorizontal here so Category Container touches edges
+    // Removed horizontal padding so Category Container touches edges
     paddingBottom: vs(20),
-    paddingTop: vs(80), 
+    paddingTop: vs(80),
   },
   categoryContainer: {
-    // No margins or fixed width needed now
-    backgroundColor: '#fff', 
-    height: vs(50), 
+    // Background color needed for sticky header
+    backgroundColor: '#fff',
+    height: vs(50),
     justifyContent: 'center',
   },
   categoryPill: {
@@ -419,8 +450,8 @@ const localStyles = StyleSheet.create({
     borderColor: '#ddd',
   },
   categoryText: {
-      fontSize: ms(13),
-      fontWeight: '700',
+    fontSize: ms(13),
+    fontWeight: '700',
   },
   noResultContainer: {
     padding: ms(20),
@@ -428,8 +459,6 @@ const localStyles = StyleSheet.create({
     marginTop: vs(20),
   },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
-  
-  // --- CARD UPDATES ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
@@ -440,7 +469,7 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
     height: s(75),
-    // Added margin here to replace the removed ScrollView padding
+    // Margin horizontal replaces scrollview padding
     marginHorizontal: ms(10),
   },
   clickableArea: {

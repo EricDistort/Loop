@@ -1,12 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   Image,
   StyleSheet,
   TouchableOpacity,
-  Alert,
-  TextInput,
+  ScrollView,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { supabase } from '../../utils/supabaseClient';
@@ -41,50 +40,48 @@ type AllProductsProps = {
   products: Product[];
   user: User | null;
   navigation: any;
+  searchQuery: string;
 };
 
 export default function AllProducts({
-  products,
+  products: initialProducts,
   user,
   navigation,
+  searchQuery,
 }: AllProductsProps) {
-  const [itemQuantities, setItemQuantities] = useState<{
-    [key: number]: number;
-  }>({});
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [itemQuantities, setItemQuantities] = useState<{ [key: number]: number }>({});
+  
+  // We keep this state for visual consistency, but navigation happens immediately
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  
   const [showSuccess, setShowSuccess] = useState(false);
   const animationRef = useRef<LottieView>(null);
-  const [hasItemsInCart, setHasItemsInCart] = useState(false);
 
-  const fetchCartStatus = async () => {
-    if (!user?.id || !user?.store_id) {
-      setHasItemsInCart(false);
-      return;
-    }
-    try {
-      const { count, error } = await supabase
-        .from('cart_items')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('store_id', user.store_id);
-      if (error) throw error;
-      setHasItemsInCart((count || 0) > 0);
-    } catch (e) {
-      console.error('Error fetching cart status:', e);
-      setHasItemsInCart(false);
-    }
-  };
-
+  // --- 1. FETCH DATA ---
   useEffect(() => {
-    fetchCartStatus();
+    const fetchFreshProducts = async () => {
+      const { data, error } = await supabase.from('products').select('*');
+      if (!error && data) setProducts(data);
+    };
+    fetchFreshProducts();
   }, [user?.id, user?.store_id]);
 
-  const filteredProducts = products.filter(
-    product =>
+  // --- 2. CATEGORIES ---
+  const categories = useMemo(() => {
+    const allCats = products.map(p => p.category || 'General');
+    const uniqueCats = [...new Set(allCats)];
+    return ['All', ...uniqueCats.sort()];
+  }, [products]);
+
+  // --- 3. FILTER LOGIC (Only Search is active here now, Category jumps to new screen) ---
+  const filteredProducts = products.filter(product => {
+    return (
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.brand &&
-        product.brand.toLowerCase().includes(searchQuery.toLowerCase())),
-  );
+      (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  });
 
   const updateLocalQuantity = (productId: number, change: number) => {
     setItemQuantities(prev => {
@@ -98,7 +95,9 @@ export default function AllProducts({
     if (!user) return;
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
+
     setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
+
     try {
       const { data: existingItem } = await supabase
         .from('cart_items')
@@ -107,7 +106,9 @@ export default function AllProducts({
         .eq('product_id', product.id)
         .eq('store_id', user.store_id)
         .maybeSingle();
+
       const finalNewQty = (existingItem?.quantity || 0) + quantityToAdd;
+
       if (existingItem) {
         await supabase
           .from('cart_items')
@@ -123,14 +124,10 @@ export default function AllProducts({
           },
         ]);
       }
-      await fetchCartStatus();
       setShowSuccess(true);
       animationRef.current?.play();
-      setTimeout(() => {
-        setShowSuccess(false);
-      }, 1500);
+      setTimeout(() => setShowSuccess(false), 1500);
     } catch (error: any) {
-      Alert.alert('Error', error.message);
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
@@ -141,119 +138,104 @@ export default function AllProducts({
       <View key={item.id} style={localStyles.card}>
         <TouchableOpacity
           style={localStyles.clickableArea}
-          onPress={() =>
-            navigation.navigate('ProductDetails', { product: item, user: user })
-          }
+          onPress={() => navigation.navigate('ProductDetails', { product: item, user: user })}
           activeOpacity={0.7}
         >
           <Image source={{ uri: item.image_url }} style={localStyles.image} />
           <View style={localStyles.info}>
-            <Text style={localStyles.name}>{item.name}</Text>
-            {item.brand ? (
-              <Text style={localStyles.brandText}>{item.brand}</Text>
-            ) : null}
+            <Text style={localStyles.name} numberOfLines={1}>{item.name}</Text>
+            {item.brand && <Text style={localStyles.brandText}>{item.brand}</Text>}
             <Text style={localStyles.price}>৳{Math.round(item.price)}</Text>
           </View>
         </TouchableOpacity>
+
         <View style={localStyles.actionColumn}>
-          {/* POP BUTTON: ADD WITH GRADIENT */}
-          <PopButton
-            style={localStyles.addBtnSmall}
-            onPress={() => commitToCart(item)}
-          >
+          <PopButton style={localStyles.addBtnSmall} onPress={() => commitToCart(item)}>
             <LinearGradient
               colors={['#4c0079ff', '#a200b1ff']}
               start={{ x: 0, y: 1 }}
               end={{ x: 1, y: 0 }}
-              style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-                width: '100%',
-              }}
+              style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}
             >
               <Text style={localStyles.addBtnText}>ADD</Text>
             </LinearGradient>
           </PopButton>
 
           <View style={localStyles.horizontalCounter}>
-            <TouchableOpacity
-              style={localStyles.counterBtn}
-              onPress={() => updateLocalQuantity(item.id, -1)}
-              disabled={quantity === 0}
-            >
-              <Text
-                style={[
-                  localStyles.counterText,
-                  { opacity: quantity === 0 ? 0.3 : 1 },
-                ]}
-              >
-                -
-              </Text>
-            </TouchableOpacity>
+            <PopButton style={localStyles.counterBtn} onPress={() => updateLocalQuantity(item.id, -1)} disabled={quantity === 0}>
+              <Text style={[localStyles.counterText, { opacity: quantity === 0 ? 0.3 : 1 }]}>-</Text>
+            </PopButton>
             <Text style={localStyles.counterNumber}>{quantity}</Text>
-            <TouchableOpacity
-              style={localStyles.counterBtn}
-              onPress={() => updateLocalQuantity(item.id, 1)}
-            >
+            <PopButton style={localStyles.counterBtn} onPress={() => updateLocalQuantity(item.id, 1)}>
               <Text style={localStyles.counterText}>+</Text>
-            </TouchableOpacity>
+            </PopButton>
           </View>
         </View>
       </View>
     );
   };
 
-  return (
-    <View style={{ width: '100%', flex: 1, backgroundColor: '#fff' }}>
-      {/* HEADER */}
-      <View style={localStyles.listHeader}>
-        <View style={localStyles.searchContainer}>
-          <TextInput
-            style={localStyles.searchInput}
-            placeholder="Search..."
-            placeholderTextColor="#a08eacff"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={localStyles.clearIcon}>✕</Text>
-            </TouchableOpacity>
-          )}
-          {/* POP BUTTON: ALL */}
-          <PopButton
-            style={localStyles.allButton}
-            onPress={() =>
-              navigation.navigate('FullCatalog', {
-                products: products,
-                user: user,
-              })
-            }
-          >
-            <Text style={localStyles.allButtonText}>All</Text>
-          </PopButton>
-        </View>
-        {/* POP BUTTON: CART HEADER */}
-        <PopButton
-          style={localStyles.headerCartBtn}
-          onPress={() => navigation.navigate('Cart')}
+  // --- RENDER CATEGORY PILL (UPDATED: Navigates to FullCatalog) ---
+  const renderCategoryPill = (cat: string) => {
+    // We treat "All" as selected visually just for this screen, 
+    // but clicking anything navigates away.
+    const isSelected = selectedCategory === cat; 
+
+    return (
+        <PopButton 
+            key={cat} 
+            style={{ marginRight: ms(10) }}
+            onPress={() => {
+                // Navigate to FullCatalog passing the clicked category
+                navigation.navigate('FullCatalog', {
+                    products: products,
+                    user: user,
+                    initialCategory: cat // Pass this to pre-select in FullCatalog
+                });
+            }}
         >
-          <Image
-            source={require('../StoreMedia/Cart.png')}
-            style={localStyles.cartIcon}
-          />
-          {hasItemsInCart && <View style={localStyles.cartBadge} />}
+            {isSelected ? (
+                <LinearGradient
+                    colors={['#4c0079ff', '#a200b1ff']}
+                    start={{ x: 0, y: 1 }}
+                    end={{ x: 1, y: 0 }}
+                    style={localStyles.categoryPill}
+                >
+                    <Text style={[localStyles.categoryText, { color: 'white' }]}>{cat}</Text>
+                </LinearGradient>
+            ) : (
+                <View style={[localStyles.categoryPill, localStyles.categoryPillUnselected]}>
+                    <Text style={[localStyles.categoryText, { color: '#666' }]}>{cat}</Text>
+                </View>
+            )}
         </PopButton>
+    );
+  };
+
+  return (
+    <View style={localStyles.container}>
+      {/* CATEGORY SELECTOR */}
+      <View style={localStyles.categoryContainer}>
+          <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: ms(20) }}
+          >
+              {categories.map(renderCategoryPill)}
+          </ScrollView>
       </View>
+
       {/* LIST */}
       {filteredProducts.length > 0 ? (
         filteredProducts.map(renderProductCard)
       ) : (
         <View style={localStyles.noResultContainer}>
-          <Text style={localStyles.emptyText}>No products found.</Text>
+          <Text style={localStyles.emptyText}>
+            No products found matching "{searchQuery}"
+          </Text>
         </View>
       )}
+      
       {/* LOTTIE OVERLAY */}
       {showSuccess && (
         <View style={localStyles.lottieOverlay}>
@@ -271,70 +253,42 @@ export default function AllProducts({
 }
 
 const localStyles = StyleSheet.create({
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: vs(15),
-    width: '100%',
-    gap: ms(10),
+  container: { 
+    flex: 1, 
+    backgroundColor: '#ffffffff',
+    paddingBottom: vs(20),
   },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#64008b10',
-    borderRadius: ms(17),
-    alignItems: 'center',
-    paddingLeft: ms(15),
-    paddingRight: ms(5),
-    height: vs(35),
+  // --- LAYOUT STYLES ---
+  categoryContainer: {
+    backgroundColor: '#ffffffff', 
+    height: vs(50), 
+    justifyContent: 'center',
+    marginBottom: vs(5),
   },
-  searchInput: { flex: 1, fontSize: ms(14), color: '#333', height: '100%' },
-  clearIcon: { fontSize: ms(14), color: '#999', padding: ms(5) },
-  allButton: {
-    backgroundColor: 'white',
-    paddingVertical: vs(4),
-    paddingHorizontal: ms(12),
-    borderRadius: ms(12),
-    marginRight: ms(5),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    elevation: 1,
-  },
-  allButtonText: {
-    color: '#6c008dff',
-    fontWeight: '800',
-    fontSize: ms(12),
-  },
-  headerCartBtn: {
-    backgroundColor: '#6c008dff',
-    height: vs(35),
-    width: vs(35),
-    borderRadius: ms(17),
+  categoryPill: {
+    paddingHorizontal: ms(20),
+    paddingVertical: vs(8),
+    borderRadius: ms(20),
     justifyContent: 'center',
     alignItems: 'center',
-    // position: 'relative', // Handled by View inside
   },
-  cartIcon: {
-    width: ms(20),
-    height: ms(20),
-    resizeMode: 'contain',
-    tintColor: 'white',
+  categoryPillUnselected: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
-  cartBadge: {
-    position: 'absolute',
-    top: -ms(3),
-    right: -ms(3),
-    width: ms(15),
-    height: ms(15),
-    borderRadius: ms(10),
-    backgroundColor: '#ff00c8ff', // Purple color
-    borderWidth: 2,
-    borderColor: 'white',
+  categoryText: {
+      fontSize: ms(13),
+      fontWeight: '700',
   },
-  noResultContainer: { padding: ms(20), alignItems: 'center' },
+  noResultContainer: {
+    padding: ms(20),
+    alignItems: 'center',
+    marginTop: vs(20),
+  },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
+  
+  // --- CARD STYLES ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
@@ -345,6 +299,7 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
     height: s(75),
+    marginHorizontal: ms(10),
   },
   clickableArea: {
     flex: 1,
@@ -365,11 +320,7 @@ const localStyles = StyleSheet.create({
     height: s(75),
     paddingVertical: ms(5),
   },
-  name: {
-    fontSize: ms(16),
-    fontWeight: '900',
-    color: '#333',
-  },
+  name: { fontSize: ms(16), fontWeight: '900', color: '#333' },
   brandText: {
     fontSize: ms(13),
     fontWeight: '600',
@@ -392,18 +343,15 @@ const localStyles = StyleSheet.create({
     paddingVertical: ms(5),
   },
   addBtnSmall: {
-    // backgroundColor: '#79009eff', // Removed solid background
     width: s(90),
     height: s(25),
     borderRadius: ms(50),
-    overflow: 'hidden', // Added to clip the gradient
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
     padding: 0,
   },
-  addBtnText: {
-    color: 'white',
-    fontSize: ms(12),
-    fontWeight: '900',
-  },
+  addBtnText: { color: 'white', fontSize: ms(12), fontWeight: '900' },
   horizontalCounter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -414,15 +362,15 @@ const localStyles = StyleSheet.create({
     height: vs(20),
   },
   counterBtn: {
-    marginHorizontal: s(10),
+    width: s(30),
+    height: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   counterText: {
     fontSize: ms(15),
     fontWeight: '900',
     color: '#333',
-    minWidth: s(15),
     textAlign: 'center',
   },
   counterNumber: {
@@ -437,7 +385,6 @@ const localStyles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 999,
   },
   lottie: {
     width: ms(350),
