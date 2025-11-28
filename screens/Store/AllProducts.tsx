@@ -10,16 +10,17 @@ import {
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { supabase } from '../../utils/supabaseClient';
+import LinearGradient from 'react-native-linear-gradient';
 import {
   scale as s,
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
 
-// Replace with your actual path
+import PopButton from '../../utils/PopButton';
+
 const successAnimation = require('../StoreMedia/Success.json');
 
-// Type definitions
 export type Product = {
   id: number;
   name: string;
@@ -47,18 +48,14 @@ export default function AllProducts({
   user,
   navigation,
 }: AllProductsProps) {
-  // --- STATE ---
   const [itemQuantities, setItemQuantities] = useState<{
     [key: number]: number;
   }>({});
   const [searchQuery, setSearchQuery] = useState('');
-  // New state for Lottie
   const [showSuccess, setShowSuccess] = useState(false);
   const animationRef = useRef<LottieView>(null);
-  // Cart Badge State
   const [hasItemsInCart, setHasItemsInCart] = useState(false);
 
-  // --- HELPER FUNCTION: FETCH CART STATUS ---
   const fetchCartStatus = async () => {
     if (!user?.id || !user?.store_id) {
       setHasItemsInCart(false);
@@ -82,7 +79,6 @@ export default function AllProducts({
     fetchCartStatus();
   }, [user?.id, user?.store_id]);
 
-  // --- LOGIC: FILTER PRODUCTS ---
   const filteredProducts = products.filter(
     product =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -90,7 +86,6 @@ export default function AllProducts({
         product.brand.toLowerCase().includes(searchQuery.toLowerCase())),
   );
 
-  // --- LOCAL QUANTITY HANDLER ---
   const updateLocalQuantity = (productId: number, change: number) => {
     setItemQuantities(prev => {
       const currentQty = prev[productId] || 0;
@@ -99,12 +94,10 @@ export default function AllProducts({
     });
   };
 
-  // --- CART COMMIT LOGIC ---
   const commitToCart = async (product: Product) => {
     if (!user) return;
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
-    // Optimistically reset local quantity before API call
     setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
     try {
       const { data: existingItem } = await supabase
@@ -130,7 +123,6 @@ export default function AllProducts({
           },
         ]);
       }
-      // Update Cart Status and Show Lottie Animation
       await fetchCartStatus();
       setShowSuccess(true);
       animationRef.current?.play();
@@ -139,12 +131,10 @@ export default function AllProducts({
       }, 1500);
     } catch (error: any) {
       Alert.alert('Error', error.message);
-      // Revert on error
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
 
-  // --- RENDER PRODUCT CARD ---
   const renderProductCard = (item: Product) => {
     const quantity = itemQuantities[item.id] || 0;
     return (
@@ -166,12 +156,26 @@ export default function AllProducts({
           </View>
         </TouchableOpacity>
         <View style={localStyles.actionColumn}>
-          <TouchableOpacity
+          {/* POP BUTTON: ADD WITH GRADIENT */}
+          <PopButton
             style={localStyles.addBtnSmall}
             onPress={() => commitToCart(item)}
           >
-            <Text style={localStyles.addBtnText}>ADD</Text>
-          </TouchableOpacity>
+            <LinearGradient
+              colors={['#4c0079ff', '#a200b1ff']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              <Text style={localStyles.addBtnText}>ADD</Text>
+            </LinearGradient>
+          </PopButton>
+
           <View style={localStyles.horizontalCounter}>
             <TouchableOpacity
               style={localStyles.counterBtn}
@@ -217,7 +221,8 @@ export default function AllProducts({
               <Text style={localStyles.clearIcon}>✕</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity
+          {/* POP BUTTON: ALL */}
+          <PopButton
             style={localStyles.allButton}
             onPress={() =>
               navigation.navigate('FullCatalog', {
@@ -227,9 +232,10 @@ export default function AllProducts({
             }
           >
             <Text style={localStyles.allButtonText}>All</Text>
-          </TouchableOpacity>
+          </PopButton>
         </View>
-        <TouchableOpacity
+        {/* POP BUTTON: CART HEADER */}
+        <PopButton
           style={localStyles.headerCartBtn}
           onPress={() => navigation.navigate('Cart')}
         >
@@ -238,7 +244,7 @@ export default function AllProducts({
             style={localStyles.cartIcon}
           />
           {hasItemsInCart && <View style={localStyles.cartBadge} />}
-        </TouchableOpacity>
+        </PopButton>
       </View>
       {/* LIST */}
       {filteredProducts.length > 0 ? (
@@ -264,7 +270,6 @@ export default function AllProducts({
   );
 }
 
-// --- LOCAL STYLES ---
 const localStyles = StyleSheet.create({
   listHeader: {
     flexDirection: 'row',
@@ -309,7 +314,7 @@ const localStyles = StyleSheet.create({
     borderRadius: ms(17),
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    // position: 'relative', // Handled by View inside
   },
   cartIcon: {
     width: ms(20),
@@ -330,29 +335,26 @@ const localStyles = StyleSheet.create({
   },
   noResultContainer: { padding: ms(20), alignItems: 'center' },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
-  
-  // --- CARD STYLES MODIFIED ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
     borderRadius: ms(30),
     marginBottom: vs(10),
-    padding: 0, // Removed padding to flush image
-    paddingRight: ms(10), // Keep right padding for balance
+    padding: 0,
+    paddingRight: ms(10),
     alignItems: 'center',
-    overflow: 'hidden', // Ensures image stays within rounded corners
-    height: s(75), // Fixed height to match image
+    overflow: 'hidden',
+    height: s(75),
   },
-  clickableArea: { 
-    flex: 1, 
-    flexDirection: 'row', 
+  clickableArea: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     height: '100%',
   },
   image: {
     width: s(75),
     height: s(75),
-    // borderRadius removed here, handled by card overflow
     backgroundColor: '#eee',
     borderRadius: 30,
   },
@@ -360,8 +362,8 @@ const localStyles = StyleSheet.create({
     flex: 1,
     marginLeft: ms(15),
     justifyContent: 'space-evenly',
-    height: s(75), // Match image height
-    paddingVertical: ms(5), // Add internal padding since card padding is gone
+    height: s(75),
+    paddingVertical: ms(5),
   },
   name: {
     fontSize: ms(16),
@@ -382,20 +384,20 @@ const localStyles = StyleSheet.create({
   },
   actionColumn: {
     width: s(90),
-    height: s(75), // Match image height
+    height: s(75),
     flexDirection: 'column',
     justifyContent: 'space-evenly',
     alignItems: 'center',
     marginLeft: ms(5),
-    paddingVertical: ms(5), // Add internal padding
+    paddingVertical: ms(5),
   },
   addBtnSmall: {
-    backgroundColor: '#79009eff',
+    // backgroundColor: '#79009eff', // Removed solid background
     width: s(90),
     height: s(25),
     borderRadius: ms(50),
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden', // Added to clip the gradient
+    padding: 0,
   },
   addBtnText: {
     color: 'white',
@@ -432,10 +434,10 @@ const localStyles = StyleSheet.create({
   },
   lottieOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF', // Opaque white background
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 999, // High zIndex to float on top
+    zIndex: 999,
   },
   lottie: {
     width: ms(350),

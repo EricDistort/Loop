@@ -5,16 +5,21 @@ import {
   Image,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { supabase } from '../../utils/supabaseClient';
+import LinearGradient from 'react-native-linear-gradient';
 import {
   scale as s,
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
+
+// 1. IMPORT POP BUTTON
+import PopButton from '../../utils/PopButton';
+
 // Type Definitions
 type Product = {
   id: number;
@@ -24,23 +29,26 @@ type Product = {
   price: number;
   image_url: string;
   stock_quantity: number;
-  category?: string; // Made optional to handle cases where it's missing initially
+  category?: string;
 };
+
 type User = {
   id: string;
   store_id: string;
 };
+
 // Replace with actual path
 const successAnimation = require('../StoreMedia/Success.json');
+
 export default function ProductDetails({ route, navigation }: any) {
   const { product, user } = route.params as { product: Product; user: User };
   const [quantity, setQuantity] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  // Cart Badge State
+
   const [hasItemsInCart, setHasItemsInCart] = useState(false);
   const animationRef = useRef<LottieView>(null);
-  // --- HELPER FUNCTION: FETCH CART STATUS ---
+
   const fetchCartStatus = async () => {
     if (!user?.id || !user?.store_id) {
       setHasItemsInCart(false);
@@ -52,6 +60,7 @@ export default function ProductDetails({ route, navigation }: any) {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('store_id', user.store_id);
+
       if (error) throw error;
       setHasItemsInCart((count || 0) > 0);
     } catch (e) {
@@ -59,14 +68,14 @@ export default function ProductDetails({ route, navigation }: any) {
       setHasItemsInCart(false);
     }
   };
-  // --- FETCH RELATED PRODUCTS & CART STATUS ---
+
   useEffect(() => {
-    fetchCartStatus(); // Check cart status on mount
+    fetchCartStatus();
     const fetchRelatedProducts = async () => {
       if (!user?.store_id) return;
       const storeIdInt = parseInt(user.store_id, 10);
       if (isNaN(storeIdInt)) return;
-      // 1. Determine the category. If missing from params, fetch it.
+
       let categoryToSearch = product.category;
       if (!categoryToSearch) {
         try {
@@ -75,6 +84,7 @@ export default function ProductDetails({ route, navigation }: any) {
             .select('category')
             .eq('id', product.id)
             .single();
+
           if (!prodError && prodData) {
             categoryToSearch = prodData.category;
           }
@@ -82,10 +92,10 @@ export default function ProductDetails({ route, navigation }: any) {
           console.error('Error fetching missing category:', err);
         }
       }
-      // If we still don't have a category, we can't show related products
+
       if (!categoryToSearch) return;
+
       try {
-        // 2. Query 'store_products' table
         const { data, error } = await supabase
           .from('store_products')
           .select(
@@ -95,11 +105,12 @@ export default function ProductDetails({ route, navigation }: any) {
           `,
           )
           .eq('store_id', storeIdInt)
-          .eq('products.category', categoryToSearch) // Filter by the found category
-          .neq('products.id', product.id) // Exclude current product
+          .eq('products.category', categoryToSearch)
+          .neq('products.id', product.id)
           .limit(10);
+
         if (error) throw error;
-        // 3. Flatten the nested data structure
+
         const formattedProducts = data
           .map((item: any) => {
             const prod = item.products;
@@ -112,21 +123,24 @@ export default function ProductDetails({ route, navigation }: any) {
             return null;
           })
           .filter(item => item !== null);
+
         setRelatedProducts(formattedProducts as Product[]);
       } catch (error: any) {
         console.error('Error fetching related products:', error.message);
       }
     };
+
     fetchRelatedProducts();
   }, [user?.store_id, product.id, product.category]);
-  // --- QUANTITY HANDLER ---
+
   const updateQuantity = (change: number) => {
     setQuantity(prev => Math.max(0, prev + change));
   };
-  // --- CART LOGIC ---
+
   const addToCart = async () => {
     if (!user) return;
     const qtyToAdd = quantity === 0 ? 1 : quantity;
+
     try {
       const { data: existingItem } = await supabase
         .from('cart_items')
@@ -135,7 +149,9 @@ export default function ProductDetails({ route, navigation }: any) {
         .eq('product_id', product.id)
         .eq('store_id', user.store_id)
         .maybeSingle();
+
       const finalNewQty = (existingItem?.quantity || 0) + qtyToAdd;
+
       if (existingItem) {
         await supabase
           .from('cart_items')
@@ -151,7 +167,7 @@ export default function ProductDetails({ route, navigation }: any) {
           },
         ]);
       }
-      // Update Cart Status
+
       await fetchCartStatus();
       setShowSuccess(true);
       animationRef.current?.play();
@@ -163,12 +179,11 @@ export default function ProductDetails({ route, navigation }: any) {
       Alert.alert('Error', error.message);
     }
   };
-  // --- RENDER RELATED PRODUCT CARD ---
+
   const renderRelatedProductCard = (item: Product) => (
-    <TouchableOpacity
+    <PopButton
       key={item.id}
       style={styles.relatedCard}
-      // Push to new screen so we can go back
       onPress={() =>
         navigation.push('ProductDetails', { product: item, user: user })
       }
@@ -191,8 +206,9 @@ export default function ProductDetails({ route, navigation }: any) {
         </View>
         <Text style={styles.relatedPrice}>৳{item.price.toFixed(2)}</Text>
       </View>
-    </TouchableOpacity>
+    </PopButton>
   );
+
   return (
     <View style={styles.fullScreenContainer}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -204,6 +220,7 @@ export default function ProductDetails({ route, navigation }: any) {
             resizeMode="cover"
           />
         </View>
+
         {/* DETAILS WRAPPER */}
         <View style={styles.detailsWrapper}>
           <View style={styles.headerRow}>
@@ -218,12 +235,15 @@ export default function ProductDetails({ route, navigation }: any) {
                   'No detailed description provided for this product.'}
               </Text>
             </View>
+
             {/* RIGHT COLUMN */}
             <View style={styles.actionColumn}>
-              {/* Price Row with Cart Button */}
+              {/* Price Row with Pop Cart Button */}
               <View style={styles.priceRow}>
                 <Text style={styles.price}>৳{product.price.toFixed(2)}</Text>
-                <TouchableOpacity
+
+                {/* POP BUTTON: Cart */}
+                <PopButton
                   style={styles.headerCartBtn}
                   onPress={() => navigation.navigate('Cart')}
                 >
@@ -232,11 +252,27 @@ export default function ProductDetails({ route, navigation }: any) {
                     style={styles.cartIcon}
                   />
                   {hasItemsInCart && <View style={styles.cartBadge} />}
-                </TouchableOpacity>
+                </PopButton>
               </View>
-              <TouchableOpacity style={styles.addBtn} onPress={addToCart}>
-                <Text style={styles.addBtnText}>ADD TO CART</Text>
-              </TouchableOpacity>
+
+              {/* POP BUTTON: Add To Cart WITH GRADIENT */}
+              <PopButton style={styles.addBtn} onPress={addToCart}>
+                <LinearGradient
+                  colors={['#4c0079ff', '#a200b1ff']}
+                  start={{ x: 0, y: 1 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    flex: 1,
+                    width: '100%',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={styles.addBtnText}>ADD TO CART</Text>
+                </LinearGradient>
+              </PopButton>
+
+              {/* Counter Wrapper (Standard TouchableOpacity) */}
               <View style={styles.counterWrapper}>
                 <TouchableOpacity
                   style={styles.counterBtn}
@@ -252,7 +288,9 @@ export default function ProductDetails({ route, navigation }: any) {
                     -
                   </Text>
                 </TouchableOpacity>
+
                 <Text style={styles.counterText}>{quantity}</Text>
+
                 <TouchableOpacity
                   style={styles.counterBtn}
                   onPress={() => updateQuantity(1)}
@@ -263,6 +301,7 @@ export default function ProductDetails({ route, navigation }: any) {
             </View>
           </View>
         </View>
+
         {/* --- RELATED PRODUCTS HORIZONTAL SCROLL --- */}
         {relatedProducts.length > 0 && (
           <View style={styles.relatedProductsContainer}>
@@ -272,6 +311,7 @@ export default function ProductDetails({ route, navigation }: any) {
           </View>
         )}
       </ScrollView>
+
       {/* LOTTIE OVERLAY */}
       {showSuccess && (
         <View style={styles.lottieOverlay}>
@@ -287,6 +327,7 @@ export default function ProductDetails({ route, navigation }: any) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
@@ -362,7 +403,6 @@ const styles = StyleSheet.create({
     borderRadius: ms(13),
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
   cartIcon: {
     width: ms(16),
@@ -414,7 +454,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addBtn: {
-    backgroundColor: '#340052ff',
+    // backgroundColor: '#340052ff', // Removed background color
     height: vs(25),
     width: s(120),
     borderRadius: ms(14),
@@ -426,6 +466,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 5,
     marginVertical: vs(2),
+    overflow: 'hidden', // Required for gradient
+    padding: 0,
   },
   addBtnText: {
     color: 'white',
@@ -443,22 +485,17 @@ const styles = StyleSheet.create({
   lottie: {
     width: ms(350),
     height: ms(350),
-   
   },
   relatedProductsContainer: {
-    marginTop: vs(-10),
-    backgroundColor: '#ffffffff',
-  },
-  relatedTitle: {
-    fontSize: ms(18),
-    fontWeight: 'bold',
-    color: '#333',
-    marginLeft: ms(20),
-    marginBottom: vs(10),
+    marginTop: vs(-30),
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: vs(200),
   },
   relatedCard: {
     width: s(140),
-    marginRight: ms(10),
+    marginRight: ms(5),
     marginLeft: ms(5),
     backgroundColor: '#64008b10',
     borderRadius: ms(15),

@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Alert,
   Image,
+  TextInput,
+  StatusBar,
 } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import { useUser } from '../../utils/UserContext';
@@ -24,8 +26,7 @@ type Order = {
   created_at: string;
 };
 
-// --- STATUS IMAGES ---
-const imgConfirmed = require('./OrderMedia/Confirmed.png'); // Default/Pending
+const imgConfirmed = require('./OrderMedia/Confirmed.png');
 const imgPacked = require('./OrderMedia/Packed.png');
 const imgOut = require('./OrderMedia/OutForDelivery.png');
 const imgDelivered = require('./OrderMedia/Delivered.png');
@@ -35,6 +36,7 @@ export default function UserOrdersScreen() {
   const { user } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigation = useNavigation<any>();
 
   useEffect(() => {
@@ -59,6 +61,10 @@ export default function UserOrdersScreen() {
     setRefreshing(false);
   }, [user]);
 
+  const filteredOrders = orders.filter(order =>
+    order.id.toString().includes(searchQuery),
+  );
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending':
@@ -77,14 +83,13 @@ export default function UserOrdersScreen() {
     }
   };
 
-  // --- HELPER TO GET IMAGE BASED ON STATUS ---
   const getStatusImage = (status: string) => {
     const s = status.toLowerCase();
     if (s === 'cancelled') return imgCancelled;
     if (s === 'delivered') return imgDelivered;
     if (s.includes('out') || s.includes('delivery')) return imgOut;
     if (s === 'packed') return imgPacked;
-    return imgConfirmed; // Covers Confirmed & Pending
+    return imgConfirmed;
   };
 
   const renderItem = ({ item }: { item: Order }) => (
@@ -93,10 +98,8 @@ export default function UserOrdersScreen() {
       onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
       activeOpacity={0.7}
     >
-      {/* 1. Dynamic Image Section */}
       <Image source={getStatusImage(item.status)} style={styles.image} />
 
-      {/* 2. Info Section */}
       <View style={styles.info}>
         <Text style={styles.name}>Order {item.id}</Text>
         <Text style={styles.dateText}>
@@ -105,7 +108,6 @@ export default function UserOrdersScreen() {
         <Text style={styles.price}>৳{item.total_amount.toFixed(0)}</Text>
       </View>
 
-      {/* 3. Action Column (Status) */}
       <View style={styles.actionColumn}>
         <View
           style={[
@@ -125,9 +127,14 @@ export default function UserOrdersScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headerTitle}>My Orders</Text>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+
+      {/* 1. LIST COMPONENT
+          We render the list first, but add paddingTop so the first item 
+          isn't hidden behind the floating search bar.
+      */}
       <FlatList
-        data={orders}
+        data={filteredOrders}
         keyExtractor={item => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
@@ -136,10 +143,34 @@ export default function UserOrdersScreen() {
         onRefresh={onRefresh}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No orders found.</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery ? 'No orders match your search.' : 'No orders found.'}
+            </Text>
           </View>
         }
       />
+
+      {/* 2. DYNAMIC ISLAND SEARCH BAR (ABSOLUTE POSITION)
+          Placed after FlatList in code, but positioned absolutely on top.
+      */}
+      <View style={styles.searchWrapper}>
+        <View style={styles.searchIsland}>
+          
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Order ID..."
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            keyboardType="numeric"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Text style={styles.clearIcon}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </View>
   );
 }
@@ -148,28 +179,68 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: vs(15),
-    paddingHorizontal: ms(10),
   },
-  headerTitle: {
-    fontSize: ms(22),
-    fontWeight: '900',
-    color: '#340052ff',
-    marginBottom: vs(15),
+  // --- FLOATING SEARCH BAR STYLES ---
+  searchWrapper: {
+    position: 'absolute', // This makes it float
+    top: vs(25),          // Distance from top of screen
+    left: 0,
+    right: 0,
+    paddingHorizontal: ms(20),
+    zIndex: 100,          // Ensures it stays above the list
+    alignItems: 'center', // Centers the island horizontally if width wasn't full
+  },
+  searchIsland: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fbf2ffff', // Black Dynamic Island
+    borderRadius: ms(30),
+    borderWidth: 3,
+    borderColor: '#ffffffff',     // White border
+    height: vs(45),
+    width: '100%',              // Full width minus wrapper padding
+    paddingHorizontal: ms(15),
+  
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 10,
+  },
+  searchIcon: {
+    fontSize: ms(16),
+    marginRight: ms(10),
+  },
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: ms(14),
+    fontWeight: '600',
+    height: '100%',
+  },
+  clearIcon: {
+    color: '#888',
+    fontSize: ms(14),
+    fontWeight: 'bold',
     marginLeft: ms(5),
+    padding: ms(5),
   },
+  // --- LIST STYLES ---
   listContent: {
+    paddingHorizontal: ms(10),
     paddingBottom: vs(20),
+    paddingTop: vs(85), // Vital: Push content down so it starts below the search bar
   },
   emptyContainer: {
     padding: ms(20),
     alignItems: 'center',
-    marginTop: vs(50),
+    marginTop: vs(20),
   },
   emptyText: {
     color: '#888',
     fontSize: ms(16),
   },
+  // --- CARD STYLES ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
@@ -183,7 +254,7 @@ const styles = StyleSheet.create({
   image: {
     width: s(75),
     height: s(75),
-    backgroundColor: '#fff', // Changed to white to blend better if transparent png
+    backgroundColor: '#fff',
     resizeMode: 'cover',
     borderRadius: ms(30),
   },

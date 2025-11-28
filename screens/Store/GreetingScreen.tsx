@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image // <--- Imported Image
+import React, { useMemo, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Animated,
+  Pressable,
+  ViewStyle,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {
@@ -13,6 +15,48 @@ import {
   moderateScale as ms,
 } from 'react-native-size-matters';
 import { useUser } from '../../utils/UserContext';
+
+// --- 1. REUSABLE POP BUTTON COMPONENT (Scale Up Logic) ---
+const PopButton = ({
+  children,
+  style,
+  onPress,
+}: {
+  children: React.ReactNode;
+  style?: ViewStyle;
+  onPress?: () => void;
+}) => {
+  const scaleValue = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleValue, {
+      toValue: 1.2, // Grows to 120%
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleValue, {
+      toValue: 1, // Bounces back to 100%
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <Pressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      style={{ justifyContent: 'center', alignItems: 'center' }}
+    >
+      <Animated.View style={[style, { transform: [{ scale: scaleValue }] }]}>
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+};
 
 export default function GreetingsHeader() {
   const { user } = useUser();
@@ -26,8 +70,8 @@ export default function GreetingsHeader() {
     <View style={styles.container}>
       {/* Half-circle gradient */}
       <LinearGradient
-        colors={['#340052ff', '#d300d3ff']}
-        start={{ x: 0, y: 1 }}
+        colors={['#340052ff', '#a700b6ff']}
+        start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.halfCircle}
       />
@@ -44,14 +88,13 @@ export default function GreetingsHeader() {
           </Text>
         </View>
 
-        {/* UPDATED HELP BUTTON */}
-        <TouchableOpacity style={styles.helpButton}>
-           {/* REPLACE THE PATH BELOW WITH YOUR ACTUAL IMAGE PATH */}
-          <Image 
-            source={require('../StoreMedia/Help.png')} 
-            style={styles.helpIcon} 
+        {/* 2. USING THE CUSTOM POP BUTTON */}
+        <PopButton style={styles.helpButton}>
+          <Image
+            source={require('../StoreMedia/Help.png')}
+            style={styles.helpIcon}
           />
-        </TouchableOpacity>
+        </PopButton>
       </View>
     </View>
   );
@@ -72,7 +115,6 @@ const styles = StyleSheet.create({
     height: 1000,
     borderRadius: 500,
     top: -780,
-
     // Shadow
     shadowColor: 'rgba(0, 0, 0, 1)',
     shadowOffset: { width: 0, height: vs(4) },
@@ -112,9 +154,8 @@ const styles = StyleSheet.create({
     paddingRight: ms(40),
   },
 
-  // --- UPDATED BUTTON STYLES ---
+  // Button Style (Passed to PopButton)
   helpButton: {
-    // Removed border/padding to make it a clean icon button
     padding: ms(5),
     justifyContent: 'center',
     alignItems: 'center',
@@ -122,12 +163,16 @@ const styles = StyleSheet.create({
     borderRadius: ms(17),
     width: ms(40),
     height: ms(40),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 
   helpIcon: {
-    width: ms(28), // Adjust size as needed
+    width: ms(28),
     height: ms(28),
     resizeMode: 'contain',
-    //tintColor: '#ffffff', // Keeping the cyan accent color
   },
 });

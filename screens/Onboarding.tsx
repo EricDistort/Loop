@@ -5,14 +5,16 @@ import {
   StyleSheet,
   FlatList,
   Image,
-  TouchableOpacity,
   Dimensions,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import ScreenWrapper from '../utils/ScreenWrapper';
 
+// 1. IMPORT POP BUTTON
+import PopButton from '../utils/PopButton';
+
 const { width } = Dimensions.get('window');
-const DARK_PURPLE = '#3c005fff'; // Extracted dark purple color
+const DARK_PURPLE = '#3c005fff';
 
 const slides = [
   {
@@ -97,35 +99,31 @@ export default function OnboardingScreen({ navigation }: any) {
 
         {/* Buttons Container */}
         <View style={styles.buttonContainer}>
-          {/* Continue button */}
-          <TouchableOpacity 
-            style={styles.continueButtonWrapper} 
-            onPress={() => navigation.replace('Login')}
-          >
+          
+          {/* Continue Button */}
+          <PopButton onPress={() => navigation.replace('Login')}>
             <LinearGradient
               colors={['#340052ff', '#8c0099ff']}
               start={{ x: 0, y: 1 }}
               end={{ x: 1, y: 0 }}
-              style={styles.button}
+              style={styles.continueBtn} // <--- Manually sized below
             >
               <Text style={styles.buttonText}>Continue</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </PopButton>
 
-          {/* Explore button */}
-          <TouchableOpacity
-            style={styles.exploreButtonWrapper}
-            onPress={() => navigation.replace('Explore')}
-          >
+          {/* Skip Button */}
+          <PopButton onPress={() => navigation.replace('Explore')}>
             <LinearGradient
               colors={['#340052ff', '#8c0099ff']}
-             start={{ x: 0, y: 1 }}
+              start={{ x: 0, y: 1 }}
               end={{ x: 1, y: 0 }}
-              style={styles.button}
+              style={styles.skipBtn} // <--- Manually sized below
             >
               <Text style={styles.exploreButtonText}>Skip</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </PopButton>
+
         </View>
       </View>
     </ScreenWrapper>
@@ -177,35 +175,37 @@ const styles = StyleSheet.create({
   // --- Button Styles ---
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Space out the two buttons
-    marginHorizontal: 40,
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    paddingHorizontal: 40, // Padding for container instead of margin
     marginBottom: 50,
   },
-  continueButtonWrapper: {
-    flex: 1, // Allows 'Continue' button to take available space
-    marginRight: 10, // Small margin between the two buttons
-  },
-  exploreButtonWrapper: {
-    width: '25%', // Allocate specific width for 'Explore' button
-  },
-  button: {
-    paddingVertical: 12,
+
+  // 1. CONTINUE BUTTON SIZE (Manual Control)
+  continueBtn: {
+    width: 220,  // <--- Change width here
+    height: 50,  // <--- Change height here
     borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 5,
   },
+
+  // 2. SKIP BUTTON SIZE (Manual Control)
+  skipBtn: {
+    width: 80,   // <--- Change width here
+    height: 50,  // <--- Change height here
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+
   buttonText: {
     textAlign: 'center',
     color: 'white',
     fontWeight: 'bold',
     fontSize: 18,
-  },
-  exploreButton: {
-    paddingVertical: 12,
-    borderRadius: 50,
-    backgroundColor: 'white',
-    borderWidth: 2,
-    borderColor: DARK_PURPLE, // Adding a subtle border for clarity
-    elevation: 5,
   },
   exploreButtonText: {
     textAlign: 'center',

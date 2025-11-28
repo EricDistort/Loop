@@ -12,11 +12,15 @@ import {
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { supabase } from '../../utils/supabaseClient';
+import LinearGradient from 'react-native-linear-gradient';
 import {
   scale as s,
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
+
+// 1. IMPORT POP BUTTON
+import PopButton from '../../utils/PopButton';
 
 // Replace with your actual path
 const successAnimation = require('../StoreMedia/Success.json');
@@ -170,15 +174,31 @@ export default function FullCatalog({ route, navigation }: any) {
             <Text style={localStyles.price}>৳{Math.round(item.price)}</Text>
           </View>
         </TouchableOpacity>
+
         <View style={localStyles.actionColumn}>
-          <TouchableOpacity
+         
+          <PopButton
             style={localStyles.addBtnSmall}
             onPress={() => commitToCart(item)}
           >
-            <Text style={localStyles.addBtnText}>ADD</Text>
-          </TouchableOpacity>
+            <LinearGradient
+              colors={['#4c0079ff', '#a200b1ff']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                flex: 1,
+                width: '100%',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={localStyles.addBtnText}>ADD</Text>
+            </LinearGradient>
+          </PopButton>
+
           <View style={localStyles.horizontalCounter}>
-            <TouchableOpacity
+            {/* 4. POP ANIMATION: Minus Button */}
+            <PopButton
               style={localStyles.counterBtn}
               onPress={() => updateLocalQuantity(item.id, -1)}
               disabled={quantity === 0}
@@ -191,14 +211,17 @@ export default function FullCatalog({ route, navigation }: any) {
               >
                 -
               </Text>
-            </TouchableOpacity>
+            </PopButton>
+
             <Text style={localStyles.counterNumber}>{quantity}</Text>
-            <TouchableOpacity
+
+            {/* 5. POP ANIMATION: Plus Button */}
+            <PopButton
               style={localStyles.counterBtn}
               onPress={() => updateLocalQuantity(item.id, 1)}
             >
               <Text style={localStyles.counterText}>+</Text>
-            </TouchableOpacity>
+            </PopButton>
           </View>
         </View>
       </View>
@@ -208,30 +231,38 @@ export default function FullCatalog({ route, navigation }: any) {
   return (
     <View style={localStyles.screenContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      {/* Header */}
-      <View style={localStyles.listHeader}>
-        <TextInput
-          style={localStyles.searchInput}
-          placeholder="Search products..."
-          placeholderTextColor="#a08eacff"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Text style={localStyles.clearIcon}>✕</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={localStyles.headerCartBtn}
-          onPress={() => navigation.navigate('Cart')}
-        >
-          <Image
-            source={require('../StoreMedia/Cart.png')}
-            style={localStyles.cartIcon}
+
+      {/* 2. DYNAMIC ISLAND HEADER (Sticky) */}
+      <View style={localStyles.searchWrapper}>
+        <View style={localStyles.searchIsland}>
+          {/* Input */}
+          <TextInput
+            style={localStyles.searchInput}
+            placeholder="Search products..."
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
-          {hasItemsInCart && <View style={localStyles.cartBadge} />}
-        </TouchableOpacity>
+
+          {/* Clear Icon */}
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Text style={localStyles.clearIcon}>✕</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* 2. POP ANIMATION: Cart Button */}
+          <PopButton
+            style={localStyles.headerCartBtn}
+            onPress={() => navigation.navigate('Cart')}
+          >
+            <Image
+              source={require('../StoreMedia/Cart.png')}
+              style={localStyles.cartIcon}
+            />
+            {hasItemsInCart && <View style={localStyles.cartBadge} />}
+          </PopButton>
+        </View>
       </View>
 
       {/* Product list */}
@@ -271,72 +302,112 @@ const localStyles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: vs(10),
-    paddingHorizontal: ms(10),
   },
-  listHeader: {
+  // --- FLOATING DYNAMIC ISLAND STYLES ---
+  searchWrapper: {
+    position: 'absolute', // Sticky
+    top: vs(25), // Distance from top
+    left: 0,
+    right: 0,
+    paddingHorizontal: ms(20),
+    zIndex: 100, // Float above content
+    alignItems: 'center',
+  },
+  searchIsland: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: vs(20),
+    backgroundColor: '#fbf2ffff', // Black background
+    borderRadius: ms(25),
+    borderWidth: 3,
+    borderColor: '#ffffff', // White border
+    height: vs(45),
     width: '100%',
-    gap: ms(10),
-    marginTop: vs(15),
+    paddingHorizontal: ms(15),
+    // Shadow
+    shadowColor: '#5f0077ff',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 10,
+  },
+  searchIcon: {
+    fontSize: ms(16),
+    marginRight: ms(10),
   },
   searchInput: {
     flex: 1,
+    color: '#fff', // White text
     fontSize: ms(14),
-    color: '#333',
-    height: vs(35),
-    backgroundColor: '#64008b10',
-    borderRadius: ms(17),
-    paddingLeft: ms(15),
+    fontWeight: '600',
+    height: '100%',
   },
-  clearIcon: { fontSize: ms(14), color: '#999', padding: ms(5) },
+  clearIcon: {
+    color: '#888',
+    fontSize: ms(14),
+    fontWeight: 'bold',
+    marginLeft: ms(5),
+    padding: ms(5),
+  },
+  verticalDivider: {
+    width: 1,
+    height: '50%',
+    backgroundColor: '#333',
+    marginHorizontal: ms(10),
+  },
   headerCartBtn: {
-    backgroundColor: '#6c008dff',
-    height: vs(35),
-    width: vs(35),
-    borderRadius: ms(17),
+    backgroundColor: '#6c008dff', // Keep purple brand color for cart btn
+    height: vs(30),
+    width: vs(30),
+    borderRadius: ms(15),
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    // position: 'relative', // Handled by PopButton logic
   },
   cartIcon: {
-    width: ms(20),
-    height: ms(20),
+    width: ms(16),
+    height: ms(16),
     resizeMode: 'contain',
     tintColor: 'white',
   },
   cartBadge: {
     position: 'absolute',
-    top: -ms(3),
-    right: -ms(3),
-    width: ms(15),
-    height: ms(15),
-    borderRadius: ms(10),
-    backgroundColor: '#ff00c8ff', 
-    borderWidth: 2,
+    top: -ms(2),
+    right: -ms(2),
+    width: ms(12),
+    height: ms(12),
+    borderRadius: ms(6),
+    backgroundColor: '#ff00c8ff', // Pink badge
+    borderWidth: 1.5,
     borderColor: 'white',
   },
-  scrollContent: { paddingBottom: vs(20), paddingHorizontal: ms(5) },
-  noResultContainer: { padding: ms(20), alignItems: 'center' },
+  // --- LIST CONTENT STYLES ---
+  scrollContent: {
+    paddingHorizontal: ms(10),
+    paddingBottom: vs(20),
+    paddingTop: vs(80), // Push content down to start below Dynamic Island
+  },
+  noResultContainer: {
+    padding: ms(20),
+    alignItems: 'center',
+    marginTop: vs(20),
+  },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
-  
-  // --- UPDATED CARD STYLES ---
+
+  // --- CARD STYLES ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
     borderRadius: ms(30),
     marginBottom: vs(10),
-    padding: 0, // Removed padding to flush image
-    paddingRight: ms(10), // Keep right padding for balance
+    padding: 0,
+    paddingRight: ms(10),
     alignItems: 'center',
-    overflow: 'hidden', // Ensures image stays within rounded corners
-    height: s(75), // Fixed height
+    overflow: 'hidden',
+    height: s(75),
   },
-  clickableArea: { 
-    flex: 1, 
-    flexDirection: 'row', 
+  clickableArea: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     height: '100%',
   },
@@ -344,8 +415,7 @@ const localStyles = StyleSheet.create({
     width: s(75),
     height: s(75),
     backgroundColor: '#eee',
-    borderRadius: 30,
-    // borderRadius removed, handled by parent overflow
+    borderRadius: 30, // Keeping rounded style for full catalog images
   },
   info: {
     flex: 1,
@@ -377,12 +447,14 @@ const localStyles = StyleSheet.create({
     paddingVertical: ms(5),
   },
   addBtnSmall: {
-    backgroundColor: '#79009eff',
+    // backgroundColor: '#79009eff', // Removed solid background
     width: s(90),
     height: s(25),
     borderRadius: ms(50),
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden', // Required for gradient
+    padding: 0,
   },
   addBtnText: { color: 'white', fontSize: ms(12), fontWeight: '900' },
   horizontalCounter: {
@@ -395,15 +467,15 @@ const localStyles = StyleSheet.create({
     height: vs(20),
   },
   counterBtn: {
-    marginHorizontal: s(10),
+    width: s(30), // Fixed width for easier tapping
+    height: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   counterText: {
     fontSize: ms(15),
     fontWeight: '900',
     color: '#333',
-    minWidth: s(15),
     textAlign: 'center',
   },
   counterNumber: {

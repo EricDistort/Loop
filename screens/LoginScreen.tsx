@@ -4,7 +4,6 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Alert,
 } from 'react-native';
@@ -21,6 +20,9 @@ import { supabase } from '../utils/supabaseClient';
 import { useUser } from '../utils/UserContext';
 import ScreenWrapper from '../utils/ScreenWrapper';
 import LottieView from 'lottie-react-native';
+
+// 1. IMPORT POP BUTTON
+import PopButton from '../utils/PopButton';
 
 type RootStackParamList = {
   Login: undefined;
@@ -78,6 +80,15 @@ export default function LoginRegister() {
     return Math.floor(1000000000 + Math.random() * 9000000000);
   };
 
+  // Helper to ensure minimum loading time
+  const handleMinimumLoadTime = async (startTime: number) => {
+    const elapsedTime = Date.now() - startTime;
+    const minimumTime = 2000; // 2 seconds
+    if (elapsedTime < minimumTime) {
+      await new Promise(resolve => setTimeout(resolve, minimumTime - elapsedTime));
+    }
+  };
+
   // REGISTER
   const handleRegister = async () => {
     if (
@@ -91,6 +102,7 @@ export default function LoginRegister() {
       return Alert.alert('Fill all fields');
 
     setLoading(true);
+    const startTime = Date.now();
 
     try {
       // Check if phone number already exists
@@ -101,6 +113,7 @@ export default function LoginRegister() {
         .maybeSingle();
 
       if (existingPhone) {
+        await handleMinimumLoadTime(startTime);
         setLoading(false);
         return Alert.alert('Mobile number already registered');
       }
@@ -132,10 +145,12 @@ export default function LoginRegister() {
 
       if (error) throw error;
 
+      await handleMinimumLoadTime(startTime);
       setLoading(false);
       setUser(insertedUser);
       navigation.replace('Main');
     } catch (e: any) {
+      await handleMinimumLoadTime(startTime);
       setLoading(false);
       Alert.alert('Registration Error', e.message);
     }
@@ -147,6 +162,8 @@ export default function LoginRegister() {
       return Alert.alert('Fill all fields');
 
     setLoading(true);
+    const startTime = Date.now();
+
     try {
       const { data: user, error } = await supabase
         .from('users')
@@ -155,20 +172,25 @@ export default function LoginRegister() {
         .maybeSingle();
 
       if (error) throw error;
+      
       if (!user) {
+        await handleMinimumLoadTime(startTime);
         setLoading(false);
         return Alert.alert('Mobile number not registered');
       }
 
       if (user.password === password.trim()) {
+        await handleMinimumLoadTime(startTime);
         setLoading(false);
         setUser(user);
         navigation.replace('Main');
       } else {
+        await handleMinimumLoadTime(startTime);
         setLoading(false);
         Alert.alert('Invalid password');
       }
     } catch (e: any) {
+      await handleMinimumLoadTime(startTime);
       setLoading(false);
       Alert.alert('Login Error', e.message);
     }
@@ -286,12 +308,15 @@ export default function LoginRegister() {
           </View>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity onPress={handleLogin} style={styles.button}>
+            {/* PopButton for Login */}
+            <PopButton onPress={handleLogin} style={styles.button}>
               <Text style={styles.btntxt}>Login</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleRegister} style={styles.button}>
+            </PopButton>
+
+            {/* PopButton for Register */}
+            <PopButton onPress={handleRegister} style={styles.button}>
               <Text style={styles.btntxt}>Register</Text>
-            </TouchableOpacity>
+            </PopButton>
           </View>
         </LinearGradient>
       </SafeAreaView>
@@ -352,13 +377,17 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ffffff7e',
   },
   picker: { color: 'rgba(255, 255, 255, 0.7)', fontSize: ms(17) },
+
+  // --- UPDATED FIXED BUTTON STYLES ---
   button: {
-    padding: ms(14),
+    // padding: ms(14), // Removed dynamic padding
     borderRadius: ms(80),
     marginTop: vs(12),
     backgroundColor: 'white',
-    width: '48%',
-    alignItems: 'center',
+    width: s(110),   // Fixed Width
+    height: vs(45),  // Fixed Height
+    justifyContent: 'center', // Center text vertically
+    alignItems: 'center',     // Center text horizontally
   },
   btntxt: {
     color: '#340052ff',

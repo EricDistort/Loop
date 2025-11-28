@@ -4,7 +4,7 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  TouchableOpacity,
+  TouchableOpacity, // Keeping for any non-animated areas if needed
   TextInput,
   Image,
   Alert,
@@ -24,6 +24,9 @@ import {
 import Geolocation from 'react-native-geolocation-service';
 import LinearGradient from 'react-native-linear-gradient';
 import LottieView from 'lottie-react-native';
+
+// 1. IMPORT POP BUTTON
+import PopButton from '../../utils/PopButton';
 
 // REPLACE with your actual local Lottie file path
 const emptyCartAnimation = require('../StoreMedia/Cat.json');
@@ -187,7 +190,7 @@ export default function CartScreen({ navigation }: any) {
           total_amount: totalAmount,
           delivery_address: finalDeliveryAddress,
           location: locationUrl,
-          status: 'Confirmed', // <--- CHANGED FROM 'Pending' TO 'Confirmed'
+          status: 'Confirmed', 
           products: productsData,
         },
       ]);
@@ -227,18 +230,23 @@ export default function CartScreen({ navigation }: any) {
           </Text>
         </View>
         <View style={styles.priceQtyRow}>
-          <TouchableOpacity
+          
+          {/* 3. POP ANIMATION: Minus Button */}
+          <PopButton
             style={styles.minusBtn}
             onPress={() => decrementQuantity(item.id, item.quantity)}
           >
             <Text style={styles.minusBtnText}>-</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </PopButton>
+
+          {/* 4. POP ANIMATION: Remove Button */}
+          <PopButton
             style={styles.removeBtn}
             onPress={() => removeItem(item.id)}
           >
             <Text style={styles.removeBtnText}>Remove</Text>
-          </TouchableOpacity>
+          </PopButton>
+
         </View>
       </View>
     </View>
@@ -288,7 +296,8 @@ export default function CartScreen({ navigation }: any) {
               numberOfLines={1}
             />
 
-            <TouchableOpacity
+            {/* 2. POP ANIMATION: Map Button */}
+            <PopButton
               style={[
                 styles.locationBtn,
                 locationUrl ? { backgroundColor: '#e0ffe0' } : {},
@@ -308,10 +317,11 @@ export default function CartScreen({ navigation }: any) {
                   {locationUrl ? 'Pinned' : 'Map'}
                 </Text>
               )}
-            </TouchableOpacity>
+            </PopButton>
           </View>
 
-          <TouchableOpacity onPress={placeOrder} activeOpacity={0.8}>
+          {/* 5. POP ANIMATION: Buy Button */}
+          <PopButton onPress={placeOrder}>
             <LinearGradient
               colors={['#340052ff', '#8c0099ff']}
               start={{ x: 0, y: 1 }}
@@ -322,7 +332,11 @@ export default function CartScreen({ navigation }: any) {
                 Buy Total ৳{getTotal().toFixed(0)}
               </Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </PopButton>
+          <View style={styles.row}>
+            
+          </View>
+          
         </ScrollView>
       </View>
     </View>
@@ -445,7 +459,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   checkoutContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffffff',
     padding: ms(20),
     marginBottom: vs(80),
   },
@@ -497,8 +511,10 @@ const styles = StyleSheet.create({
   placeOrderButton: {
     paddingVertical: vs(10),
     borderRadius: ms(22),
-    marginHorizontal: ms(20),
+    justifyContent: 'center',
     alignItems: 'center',
+    width: ms(250),
+    height: vs(40),
   },
   placeOrderText: {
     color: '#fff',

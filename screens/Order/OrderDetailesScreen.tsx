@@ -6,10 +6,11 @@ import {
   ScrollView,
   Image,
   Alert,
-  TouchableOpacity,
+  TouchableOpacity, // Still imported for non-animated areas if any
   Linking,
   StatusBar,
   ActivityIndicator,
+  Clipboard,
 } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import {
@@ -19,13 +20,15 @@ import {
 } from 'react-native-size-matters';
 import LottieView from 'lottie-react-native';
 
-// --- LOTTIE ANIMATION IMPORTS (Ensure these exist in your folder) ---
+// 1. IMPORT POP BUTTON
+import PopButton from '../../utils/PopButton';
+
+// --- LOTTIE ANIMATION IMPORTS ---
 const animConfirmed = require('./OrderMedia/Confirmed.json');
-const animPacked = require('./OrderMedia/Packedone.json');
+const animPacked = require('./OrderMedia/Packed.json');
 const animOutForDelivery = require('./OrderMedia/OutForDelivery.json');
 const animDelivered = require('./OrderMedia/Delivered.json');
-// Optional: A fallback or specific one for Cancelled
-const animCancelled = require('./OrderMedia/Cancelled.json'); // Reusing empty or specific cancelled one
+const animCancelled = require('./OrderMedia/Cancelled.json');
 
 type JsonOrderItem = {
   product_id: number;
@@ -61,6 +64,9 @@ export default function OrderDetailScreen({ route, navigation }: any) {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [displayItems, setDisplayItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // --- COPY BUTTON STATE ---
+  const [copyState, setCopyState] = useState<'idle' | 'loading' | 'success'>('idle');
 
   useEffect(() => {
     fetchOrderDetails();
@@ -116,6 +122,21 @@ export default function OrderDetailScreen({ route, navigation }: any) {
     }
   };
 
+  // --- COPY LOGIC ---
+  const handleCopyOrderId = () => {
+    if (!order?.id) return;
+
+    setCopyState('loading');
+    Clipboard.setString(order.id.toString());
+
+    setTimeout(() => {
+      setCopyState('success');
+      setTimeout(() => {
+        setCopyState('idle');
+      }, 2000);
+    }, 500); 
+  };
+
   const handleCancelOrder = () => {
     Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
       { text: 'No', style: 'cancel' },
@@ -149,11 +170,11 @@ export default function OrderDetailScreen({ route, navigation }: any) {
       case 'confirmed':
         return '#ff9900';
       case 'packed':
-        return '#6c008dff'; // Purple
+        return '#6c008dff';
       case 'out for delivery':
-        return '#007bff'; // Blue
+        return '#007bff';
       case 'delivered':
-        return '#00aa00'; // Green
+        return '#00aa00';
       case 'cancelled':
         return '#ff0000';
       default:
@@ -161,16 +182,12 @@ export default function OrderDetailScreen({ route, navigation }: any) {
     }
   };
 
-  // --- ANIMATION SELECTION LOGIC ---
   const getStatusAnimation = (status: string = '') => {
     const s = status.toLowerCase();
-    
     if (s === 'cancelled') return animCancelled;
     if (s === 'delivered') return animDelivered;
     if (s.includes('out') || s.includes('delivery')) return animOutForDelivery;
     if (s === 'packed') return animPacked;
-    
-    // Default (Pending/Confirmed)
     return animConfirmed;
   };
 
@@ -219,24 +236,23 @@ export default function OrderDetailScreen({ route, navigation }: any) {
         </View>
 
         {showCancelButton && (
-          <TouchableOpacity
+          // 2. POP ANIMATION: Cancel Button
+          <PopButton
             onPress={handleCancelOrder}
             style={[
               styles.statusBadge,
-              { borderColor: '#ff0000', marginLeft: ms(10) },
+              { borderColor: '#cc0000ff', marginLeft: ms(10), backgroundColor: '#ff0000ff'},
             ]}
           >
-            <Text style={[styles.statusText, { color: '#ff0000' }]}>
+            <Text style={[styles.statusText, { color: '#ffffffff' }]}>
               Cancel
             </Text>
-          </TouchableOpacity>
+          </PopButton>
         )}
       </View>
 
       {/* 3. Items Section */}
       <View style={styles.section}>
-        
-
         <View style={styles.itemsScrollContainer}>
           <ScrollView showsVerticalScrollIndicator={false}>
             {displayItems.map((item, index) => (
@@ -273,7 +289,28 @@ export default function OrderDetailScreen({ route, navigation }: any) {
         </View>
 
         <View style={styles.totalRow}>
-          <Text style={styles.orderIdBottom}>Order #{order?.id}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.orderIdBottom}>Order #{order?.id}</Text>
+            
+            {/* 3. POP ANIMATION: Copy Button */}
+            <PopButton
+              onPress={handleCopyOrderId}
+              style={[
+                styles.copyButton,
+                copyState === 'success' && { backgroundColor: '#e0ffe0' }, 
+              ]}
+              disabled={copyState !== 'idle'} 
+            >
+              {copyState === 'loading' ? (
+                <ActivityIndicator size="small" color="#666" />
+              ) : copyState === 'success' ? (
+                <Text style={[styles.copyButtonText, { color: 'green', fontSize: ms(14) }]}>✓</Text>
+              ) : (
+                <Text style={styles.copyButtonText}>❐</Text>
+              )}
+            </PopButton>
+          </View>
+
           <View style={styles.totalRightContainer}>
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>
@@ -285,8 +322,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
 
       {/* 4. Delivery Details */}
       <View style={styles.addressContainer}>
-        <Text style={styles.sectionTitle}>Delivery Details</Text>
-
+       
         <View style={styles.addressRow}>
           <View style={{ flex: 1, marginRight: ms(10) }}>
             <Text style={styles.detailValue}>
@@ -295,9 +331,10 @@ export default function OrderDetailScreen({ route, navigation }: any) {
           </View>
 
           {order?.location ? (
-            <TouchableOpacity style={styles.locationBtn} onPress={openLocation}>
+            // 4. POP ANIMATION: Location Button
+            <PopButton style={styles.locationBtn} onPress={openLocation}>
               <Text style={styles.locationBtnText}>Location</Text>
-            </TouchableOpacity>
+            </PopButton>
           ) : null}
         </View>
       </View>
@@ -319,8 +356,7 @@ const styles = StyleSheet.create({
   headerImageContainer: {
     width: '100%',
     height: vs(320),
-    backgroundColor: '#ffffff', // White background for transparent Lotties
-    //marginBottom: vs(10),
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -334,7 +370,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: vs(-10),
     paddingHorizontal: ms(20),
-    marginBottom: vs(10), 
+    marginBottom: vs(10),
   },
   statusBadge: {
     paddingVertical: vs(4),
@@ -350,13 +386,12 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: ms(20),
-    //marginBottom: vs(10),
   },
   sectionTitle: {
     fontSize: ms(16),
     fontWeight: '900',
     color: '#340052ff',
-    //marginBottom: vs(5),
+    marginBottom: vs(10),
   },
   itemsScrollContainer: {
     maxHeight: vs(120),
@@ -423,7 +458,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    //marginTop: vs(15),
     marginBottom: vs(10),
     paddingRight: ms(5),
   },
@@ -431,6 +465,21 @@ const styles = StyleSheet.create({
     fontSize: ms(16),
     fontWeight: 'bold',
     color: '#333',
+  },
+  // --- ROUNDED COPY BUTTON STYLES ---
+  copyButton: {
+    marginLeft: ms(10),
+    backgroundColor: '#f0f0f0',
+    borderRadius: ms(20),
+    width: ms(30), 
+    height: ms(30),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  copyButtonText: {
+    fontSize: ms(14),
+    color: '#666',
+    fontWeight: 'bold',
   },
   totalRightContainer: {
     flexDirection: 'row',

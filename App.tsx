@@ -18,6 +18,7 @@ import StoreScreen from './screens/Store/StoreScreen';
 import BannerDetailsScreen from './screens/Store/BannerDetailsScreen';
 import CartScreen from './screens/Store/CartScreen';
 import ProfileScreen from './screens/Profile/ProfileScreen';
+import ProfileEditScreen from './screens/Profile/ProfileEditScreen';
 import UserOrdersScreen from './screens/Order/OrderScreen';
 import ProductDetails from './screens/Store/ProductDetails';
 import FullCatalog from './screens/Store/FullCatalog';
@@ -49,6 +50,7 @@ function ProfileStackScreen() {
   return (
     <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
       <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
+      <ProfileStack.Screen name="ProfileEdit" component={ProfileEditScreen} />
       {/* Add more Profile-related screens here later */}
     </ProfileStack.Navigator>
   );
