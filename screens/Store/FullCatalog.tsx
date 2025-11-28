@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,13 +19,10 @@ import {
   moderateScale as ms,
 } from 'react-native-size-matters';
 
-// 1. IMPORT POP BUTTON
 import PopButton from '../../utils/PopButton';
 
-// Replace with your actual path
 const successAnimation = require('../StoreMedia/Success.json');
 
-// Type definitions
 type Product = {
   id: number;
   name: string;
@@ -34,6 +31,7 @@ type Product = {
   price: number;
   image_url: string;
   stock_quantity: number;
+  category?: string; 
 };
 
 type User = {
@@ -42,24 +40,41 @@ type User = {
 };
 
 export default function FullCatalog({ route, navigation }: any) {
-  const { products, user } = route.params as {
+  const { products: initialProducts, user } = route.params as {
     products: Product[];
     user: User;
   };
 
-  const [itemQuantities, setItemQuantities] = useState<{
-    [key: number]: number;
-  }>({});
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [itemQuantities, setItemQuantities] = useState<{ [key: number]: number }>({});
   const [searchQuery, setSearchQuery] = useState('');
-
-  // New state and ref for Lottie
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [hasItemsInCart, setHasItemsInCart] = useState(false);
+  
   const animationRef = useRef<LottieView>(null);
 
-  // Cart Badge State
-  const [hasItemsInCart, setHasItemsInCart] = useState(false);
+  useEffect(() => {
+    const fetchFreshProducts = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*'); 
+      
+      if (!error && data) {
+        setProducts(data);
+      }
+    };
 
-  // --- HELPER FUNCTION: FETCH CART STATUS ---
+    fetchFreshProducts();
+    fetchCartStatus();
+  }, [user?.id, user?.store_id]);
+
+  const categories = useMemo(() => {
+    const allCats = products.map(p => p.category || 'General');
+    const uniqueCats = [...new Set(allCats)];
+    return ['All', ...uniqueCats.sort()];
+  }, [products]);
+
   const fetchCartStatus = async () => {
     if (!user?.id || !user?.store_id) {
       setHasItemsInCart(false);
@@ -75,24 +90,21 @@ export default function FullCatalog({ route, navigation }: any) {
       if (error) throw error;
       setHasItemsInCart((count || 0) > 0);
     } catch (e) {
-      console.error('Error fetching cart status:', e);
-      setHasItemsInCart(false);
+      console.error(e);
     }
   };
 
-  useEffect(() => {
-    fetchCartStatus();
-  }, [user?.id, user?.store_id]);
-
-  // Filter products
-  const filteredProducts = products.filter(
-    product =>
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.brand &&
-        product.brand.toLowerCase().includes(searchQuery.toLowerCase())),
-  );
+      (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const productCategory = product.category || 'General';
+    const matchesCategory = selectedCategory === 'All' || productCategory === selectedCategory;
 
-  // Update local quantity
+    return matchesSearch && matchesCategory;
+  });
+
   const updateLocalQuantity = (productId: number, change: number) => {
     setItemQuantities(prev => {
       const currentQty = prev[productId] || 0;
@@ -101,13 +113,11 @@ export default function FullCatalog({ route, navigation }: any) {
     });
   };
 
-  // Commit to cart
   const commitToCart = async (product: Product) => {
     if (!user) return;
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
 
-    // Optimistically reset local quantity before API call
     setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
 
     try {
@@ -137,7 +147,6 @@ export default function FullCatalog({ route, navigation }: any) {
         ]);
       }
 
-      // Update Cart Status and Show Lottie Animation
       await fetchCartStatus();
       setShowSuccess(true);
       animationRef.current?.play();
@@ -146,12 +155,10 @@ export default function FullCatalog({ route, navigation }: any) {
       }, 1500);
     } catch (error: any) {
       Alert.alert('Error', error.message);
-      // Revert local quantity on failure
       setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
     }
   };
 
-  // Render product card
   const renderProductCard = (item: Product) => {
     const quantity = itemQuantities[item.id] || 0;
     return (
@@ -176,7 +183,6 @@ export default function FullCatalog({ route, navigation }: any) {
         </TouchableOpacity>
 
         <View style={localStyles.actionColumn}>
-         
           <PopButton
             style={localStyles.addBtnSmall}
             onPress={() => commitToCart(item)}
@@ -197,25 +203,14 @@ export default function FullCatalog({ route, navigation }: any) {
           </PopButton>
 
           <View style={localStyles.horizontalCounter}>
-            {/* 4. POP ANIMATION: Minus Button */}
             <PopButton
               style={localStyles.counterBtn}
               onPress={() => updateLocalQuantity(item.id, -1)}
               disabled={quantity === 0}
             >
-              <Text
-                style={[
-                  localStyles.counterText,
-                  { opacity: quantity === 0 ? 0.3 : 1 },
-                ]}
-              >
-                -
-              </Text>
+              <Text style={[localStyles.counterText, { opacity: quantity === 0 ? 0.3 : 1 }]}>-</Text>
             </PopButton>
-
             <Text style={localStyles.counterNumber}>{quantity}</Text>
-
-            {/* 5. POP ANIMATION: Plus Button */}
             <PopButton
               style={localStyles.counterBtn}
               onPress={() => updateLocalQuantity(item.id, 1)}
@@ -228,14 +223,39 @@ export default function FullCatalog({ route, navigation }: any) {
     );
   };
 
+  const renderCategoryPill = (cat: string) => {
+    const isSelected = selectedCategory === cat;
+    return (
+        <PopButton 
+            key={cat} 
+            onPress={() => setSelectedCategory(cat)}
+            style={{ marginRight: ms(10) }}
+        >
+            {isSelected ? (
+                <LinearGradient
+                    colors={['#4c0079ff', '#a200b1ff']}
+                    start={{ x: 0, y: 1 }}
+                    end={{ x: 1, y: 0 }}
+                    style={localStyles.categoryPill}
+                >
+                    <Text style={[localStyles.categoryText, { color: 'white' }]}>{cat}</Text>
+                </LinearGradient>
+            ) : (
+                <View style={[localStyles.categoryPill, localStyles.categoryPillUnselected]}>
+                    <Text style={[localStyles.categoryText, { color: '#666' }]}>{cat}</Text>
+                </View>
+            )}
+        </PopButton>
+    );
+  };
+
   return (
     <View style={localStyles.screenContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* 2. DYNAMIC ISLAND HEADER (Sticky) */}
+      {/* DYNAMIC ISLAND HEADER */}
       <View style={localStyles.searchWrapper}>
         <View style={localStyles.searchIsland}>
-          {/* Input */}
           <TextInput
             style={localStyles.searchInput}
             placeholder="Search products..."
@@ -243,15 +263,11 @@ export default function FullCatalog({ route, navigation }: any) {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-
-          {/* Clear Icon */}
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
               <Text style={localStyles.clearIcon}>✕</Text>
             </TouchableOpacity>
           )}
-
-          {/* 2. POP ANIMATION: Cart Button */}
           <PopButton
             style={localStyles.headerCartBtn}
             onPress={() => navigation.navigate('Cart')}
@@ -265,17 +281,30 @@ export default function FullCatalog({ route, navigation }: any) {
         </View>
       </View>
 
-      {/* Product list */}
+      {/* SCROLLABLE CONTENT */}
       <ScrollView
         contentContainerStyle={localStyles.scrollContent}
         showsVerticalScrollIndicator={false}
+        //stickyHeaderIndices={[1]} 
       >
+        {/* CATEGORY SELECTOR - FULL WIDTH */}
+        <View style={localStyles.categoryContainer}>
+            <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: ms(20) }} // Padding applied here instead
+            >
+                {categories.map(renderCategoryPill)}
+            </ScrollView>
+        </View>
+
         {filteredProducts.length > 0 ? (
           filteredProducts.map(renderProductCard)
         ) : (
           <View style={localStyles.noResultContainer}>
             <Text style={localStyles.emptyText}>
               No products found matching "{searchQuery}"
+              {selectedCategory !== 'All' ? ` in ${selectedCategory}` : ''}
             </Text>
           </View>
         )}
@@ -299,44 +328,35 @@ export default function FullCatalog({ route, navigation }: any) {
 }
 
 const localStyles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  // --- FLOATING DYNAMIC ISLAND STYLES ---
+  screenContainer: { flex: 1, backgroundColor: '#fff' },
   searchWrapper: {
-    position: 'absolute', // Sticky
-    top: vs(25), // Distance from top
+    position: 'absolute',
+    top: vs(25),
     left: 0,
     right: 0,
     paddingHorizontal: ms(20),
-    zIndex: 100, // Float above content
+    zIndex: 100,
     alignItems: 'center',
   },
   searchIsland: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fbf2ffff', // Black background
+    backgroundColor: '#fbf2ffff',
     borderRadius: ms(25),
     borderWidth: 3,
-    borderColor: '#ffffff', // White border
+    borderColor: '#ffffff',
     height: vs(45),
     width: '100%',
     paddingHorizontal: ms(15),
-    // Shadow
     shadowColor: '#5f0077ff',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 10,
   },
-  searchIcon: {
-    fontSize: ms(16),
-    marginRight: ms(10),
-  },
   searchInput: {
     flex: 1,
-    color: '#fff', // White text
+    color: '#333',
     fontSize: ms(14),
     fontWeight: '600',
     height: '100%',
@@ -348,20 +368,13 @@ const localStyles = StyleSheet.create({
     marginLeft: ms(5),
     padding: ms(5),
   },
-  verticalDivider: {
-    width: 1,
-    height: '50%',
-    backgroundColor: '#333',
-    marginHorizontal: ms(10),
-  },
   headerCartBtn: {
-    backgroundColor: '#6c008dff', // Keep purple brand color for cart btn
+    backgroundColor: '#6c008dff',
     height: vs(30),
     width: vs(30),
     borderRadius: ms(15),
     justifyContent: 'center',
     alignItems: 'center',
-    // position: 'relative', // Handled by PopButton logic
   },
   cartIcon: {
     width: ms(16),
@@ -376,15 +389,38 @@ const localStyles = StyleSheet.create({
     width: ms(12),
     height: ms(12),
     borderRadius: ms(6),
-    backgroundColor: '#ff00c8ff', // Pink badge
+    backgroundColor: '#ff00c8ff',
     borderWidth: 1.5,
     borderColor: 'white',
   },
-  // --- LIST CONTENT STYLES ---
+  
+  // --- UPDATED LAYOUT STYLES ---
   scrollContent: {
-    paddingHorizontal: ms(10),
+    // Removed paddingHorizontal here so Category Container touches edges
     paddingBottom: vs(20),
-    paddingTop: vs(80), // Push content down to start below Dynamic Island
+    paddingTop: vs(80), 
+  },
+  categoryContainer: {
+    // No margins or fixed width needed now
+    backgroundColor: '#fff', 
+    height: vs(50), 
+    justifyContent: 'center',
+  },
+  categoryPill: {
+    paddingHorizontal: ms(20),
+    paddingVertical: vs(8),
+    borderRadius: ms(20),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoryPillUnselected: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  categoryText: {
+      fontSize: ms(13),
+      fontWeight: '700',
   },
   noResultContainer: {
     padding: ms(20),
@@ -392,8 +428,8 @@ const localStyles = StyleSheet.create({
     marginTop: vs(20),
   },
   emptyText: { color: '#888', textAlign: 'center', fontSize: ms(14) },
-
-  // --- CARD STYLES ---
+  
+  // --- CARD UPDATES ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
@@ -404,6 +440,8 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
     height: s(75),
+    // Added margin here to replace the removed ScrollView padding
+    marginHorizontal: ms(10),
   },
   clickableArea: {
     flex: 1,
@@ -415,7 +453,7 @@ const localStyles = StyleSheet.create({
     width: s(75),
     height: s(75),
     backgroundColor: '#eee',
-    borderRadius: 30, // Keeping rounded style for full catalog images
+    borderRadius: 30,
   },
   info: {
     flex: 1,
@@ -447,13 +485,12 @@ const localStyles = StyleSheet.create({
     paddingVertical: ms(5),
   },
   addBtnSmall: {
-    // backgroundColor: '#79009eff', // Removed solid background
     width: s(90),
     height: s(25),
     borderRadius: ms(50),
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden', // Required for gradient
+    overflow: 'hidden',
     padding: 0,
   },
   addBtnText: { color: 'white', fontSize: ms(12), fontWeight: '900' },
@@ -467,7 +504,7 @@ const localStyles = StyleSheet.create({
     height: vs(20),
   },
   counterBtn: {
-    width: s(30), // Fixed width for easier tapping
+    width: s(30),
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
