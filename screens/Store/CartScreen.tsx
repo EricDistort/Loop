@@ -216,7 +216,7 @@ export default function CartScreen({ navigation }: any) {
       setTimeout(() => {
         setShowSuccess(false);
         navigation.goBack();
-      }, 2000);
+      }, 4000);
     } catch (error: any) {
       Alert.alert('Error placing order', error.message);
     }

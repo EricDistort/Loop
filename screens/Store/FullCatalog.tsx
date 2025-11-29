@@ -83,7 +83,7 @@ export default function FullCatalog({ route, navigation }: any) {
   }, [user?.id, user?.store_id]);
 
   const categories = useMemo(() => {
-    const allCats = products.map((p) => p.category || 'General');
+    const allCats = products.map(p => p.category || 'General');
     const uniqueCats = [...new Set(allCats)];
     return ['All', ...uniqueCats.sort()];
   }, [products]);
@@ -107,7 +107,7 @@ export default function FullCatalog({ route, navigation }: any) {
     }
   };
 
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = products.filter(product => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.brand &&
@@ -121,7 +121,7 @@ export default function FullCatalog({ route, navigation }: any) {
   });
 
   const updateLocalQuantity = (productId: number, change: number) => {
-    setItemQuantities((prev) => {
+    setItemQuantities(prev => {
       const currentQty = prev[productId] || 0;
       const newQty = Math.max(0, currentQty + change);
       return { ...prev, [productId]: newQty };
@@ -133,7 +133,7 @@ export default function FullCatalog({ route, navigation }: any) {
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
 
-    setItemQuantities((prev) => ({ ...prev, [product.id]: 0 }));
+    setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
 
     try {
       const { data: existingItem } = await supabase
@@ -170,7 +170,7 @@ export default function FullCatalog({ route, navigation }: any) {
       }, 1500);
     } catch (error: any) {
       Alert.alert('Error', error.message);
-      setItemQuantities((prev) => ({
+      setItemQuantities(prev => ({
         ...prev,
         [product.id]: quantityToAdd,
       }));
@@ -282,9 +282,7 @@ export default function FullCatalog({ route, navigation }: any) {
               localStyles.categoryPillUnselected,
             ]}
           >
-            <Text
-              style={[localStyles.categoryText, { color: '#8f7297ff' }]}
-            >
+            <Text style={[localStyles.categoryText, { color: '#8f7297ff' }]}>
               {cat}
             </Text>
           </View>
@@ -443,12 +441,12 @@ const localStyles = StyleSheet.create({
   scrollContent: {
     // Removed horizontal padding so Category Container touches edges
     paddingBottom: vs(20),
-    paddingTop: vs(90), // Increased slightly to clear the Search Island
+    paddingTop: vs(80), // Increased slightly to clear the Search Island
   },
   categoryContainer: {
     // Background color needed for sticky header
-    backgroundColor: '#fff',
-    height: vs(35),
+    backgroundColor: 'transparent',
+    height: vs(45),
     justifyContent: 'center',
     marginBottom: vs(10),
   },

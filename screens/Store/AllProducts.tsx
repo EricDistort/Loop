@@ -308,7 +308,7 @@ const localStyles = StyleSheet.create({
   // --- LAYOUT STYLES ---
   categoryContainer: {
     backgroundColor: '#ffffffff',
-    height: vs(50),
+    height: vs(45),
     justifyContent: 'center',
     marginBottom: vs(5),
   },
@@ -339,13 +339,13 @@ const localStyles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
-    borderRadius: ms(30),
-    marginBottom: vs(12), // Slightly increased spacing
+    borderRadius: ms(25),
+    marginBottom: vs(8), // Slightly increased spacing
     padding: 0,
     paddingRight: ms(10),
     alignItems: 'center',
     overflow: 'hidden',
-    height: s(85), // Increased height slightly for better proportionality
+    height: s(70), // Increased height slightly for better proportionality
     marginHorizontal: ms(10), // Consistent horizontal margins
   },
   clickableArea: {
@@ -355,10 +355,10 @@ const localStyles = StyleSheet.create({
     height: '100%',
   },
   image: {
-    width: s(85), // Match card height for perfect square
-    height: s(85),
+    width: s(70), // Match card height for perfect square
+    height: s(70),
     backgroundColor: '#eee',
-    borderRadius: ms(30), // Scaled border radius (was hardcoded 30)
+    borderRadius: ms(25), // Scaled border radius (was hardcoded 30)
   },
   info: {
     flex: 1,
@@ -368,19 +368,19 @@ const localStyles = StyleSheet.create({
     paddingVertical: vs(8),
   },
   name: {
-    fontSize: ms(16),
+    fontSize: ms(15),
     fontWeight: '900',
     color: '#562e63ff',
     //marginBottom: vs(2),
   },
   brandText: {
-    fontSize: ms(13),
+    fontSize: ms(12),
     fontWeight: '600',
     color: '#8f7896ff',
     marginBottom: vs(4),
   },
   price: {
-    fontSize: ms(15),
+    fontSize: ms(14),
     color: '#816e86ff',
     fontWeight: '700',
   },
@@ -391,11 +391,11 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: ms(5),
-    gap: vs(6), // Added gap for better separation between Add and Counter
+    gap: vs(5), // Added gap for better separation between Add and Counter
   },
   addBtnSmall: {
     width: s(85), // Slightly smaller than column width
-    height: vs(28), // Responsive height
+    height: vs(20), // Responsive height
     borderRadius: ms(50),
     justifyContent: 'center',
     alignItems: 'center',
@@ -413,7 +413,7 @@ const localStyles = StyleSheet.create({
     backgroundColor: '#34005218',
     borderRadius: ms(50),
     width: s(85), // Match button width
-    height: vs(24),
+    height: vs(20),
   },
   counterBtn: {
     width: s(28),

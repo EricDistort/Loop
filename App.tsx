@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -12,6 +12,7 @@ import { UserProvider } from './utils/UserContext';
 import LinearGradient from 'react-native-linear-gradient';
 
 // Screens
+import SplashScreen from './SplashScreen'; // Adjust path if needed
 import Onboarding from './screens/Onboarding';
 import LoginScreen from './screens/LoginScreen';
 import StoreScreen from './screens/Store/StoreScreen';
@@ -24,6 +25,7 @@ import ProductDetails from './screens/Store/ProductDetails';
 import FullCatalog from './screens/Store/FullCatalog';
 import OrderDetailScreen from './screens/Order/OrderDetailesScreen';
 import Explore from './screens/Store/Explore';
+import Help from './screens/Store/Help';
 
 const RootStack = createNativeStackNavigator();
 const StoreStack = createNativeStackNavigator();
@@ -71,25 +73,25 @@ function MainTabs() {
         initialRouteName="Store"
         screenOptions={{
           headerShown: false,
-          tabBarShowLabel: false, // Enabled labels
+          tabBarShowLabel: false,
           tabBarStyle: {
             position: 'absolute',
             bottom: vs(16),
             left: 0,
             right: 0,
-            height: vs(70), // Increased slightly to accommodate text + icon comfortable
+            height: vs(70),
             backgroundColor: 'transparent',
             borderRadius: ms(35),
             borderTopWidth: 0,
             overflow: 'hidden',
             marginHorizontal: '5%',
-            paddingBottom: vs(5), // Adjusted for text spacing
-            paddingTop: vs(20),    // Adjusted for text spacing
+            paddingBottom: vs(5),
+            paddingTop: vs(20),
             elevation: 5,
           },
           tabBarLabelStyle: {
-            fontSize: ms(10), // Responsive font size
-            marginBottom: vs(2), // Spacing from bottom
+            fontSize: ms(10),
+            marginBottom: vs(2),
             fontWeight: '600',
           },
           tabBarBackground: () => (
@@ -113,7 +115,7 @@ function MainTabs() {
           options={{
             tabBarLabel: 'Store',
             tabBarIcon: ({ focused }) => {
-              const size = focused ? s(35) : s(29); // Slightly smaller to fit text nicely
+              const size = focused ? s(35) : s(29);
               return (
                 <Image
                   source={require('./screens/tabMedia/Store.webp')}
@@ -180,6 +182,39 @@ function MainTabs() {
 }
 
 export default function App() {
+  const [isAppReady, setIsAppReady] = useState(false);
+
+  useEffect(() => {
+    const prepareApp = async () => {
+      try {
+        // 1. Minimum animation time (5 seconds)
+        const minimumWaitTask = new Promise(resolve =>
+          setTimeout(resolve, 4250),
+        );
+
+        // 2. Actual Data Loading (API calls, Context setup, etc.)
+        const loadDataTask = async () => {
+          // Put your actual initialization logic here (e.g., waiting for UserProvider)
+          // For now, we simulate a quick check
+          return new Promise(resolve => setTimeout(resolve, 100));
+        };
+
+        // 3. Wait for BOTH
+        await Promise.all([minimumWaitTask, loadDataTask()]);
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setIsAppReady(true);
+      }
+    };
+
+    prepareApp();
+  }, []);
+
+  if (!isAppReady) {
+    return <SplashScreen />;
+  }
+
   return (
     <UserProvider>
       <StatusBar hidden={true} />
@@ -188,6 +223,7 @@ export default function App() {
           initialRouteName="Onboarding"
           screenOptions={{ headerShown: false }}
         >
+          <RootStack.Screen name="Help" component={Help} />
           <RootStack.Screen name="Main" component={MainTabs} />
           <RootStack.Screen name="Login" component={LoginScreen} />
           <RootStack.Screen name="Explore" component={Explore} />

@@ -16,10 +16,12 @@ import {
   moderateScale as ms,
 } from 'react-native-size-matters';
 import { useUser } from '../../utils/UserContext';
+// 1. IMPORT NAVIGATION HOOK
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
-// --- 1. REUSABLE POP BUTTON COMPONENT (Scale Up Logic) ---
+// --- REUSABLE POP BUTTON COMPONENT ---
 const PopButton = ({
   children,
   style,
@@ -33,14 +35,14 @@ const PopButton = ({
 
   const handlePressIn = () => {
     Animated.spring(scaleValue, {
-      toValue: 1.2, // Grows to 120%
+      toValue: 1.2,
       useNativeDriver: true,
     }).start();
   };
 
   const handlePressOut = () => {
     Animated.spring(scaleValue, {
-      toValue: 1, // Bounces back to 100%
+      toValue: 1,
       friction: 3,
       tension: 40,
       useNativeDriver: true,
@@ -63,6 +65,8 @@ const PopButton = ({
 
 export default function GreetingsHeader() {
   const { user } = useUser();
+  // 2. INITIALIZE NAVIGATION
+  const navigation = useNavigation<any>();
 
   const greeting = useMemo(() => {
     const words = ['Hey', 'Hi'];
@@ -91,8 +95,11 @@ export default function GreetingsHeader() {
           </Text>
         </View>
 
-        {/* 2. USING THE CUSTOM POP BUTTON */}
-        <PopButton style={styles.helpButton}>
+        {/* 3. ADDED ONPRESS TO NAVIGATE TO SUPPORT */}
+        <PopButton
+          style={styles.helpButton}
+          onPress={() => navigation.navigate('Help')}
+        >
           <Image
             source={require('../StoreMedia/Help.png')}
             style={styles.helpIcon}
@@ -107,77 +114,66 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     justifyContent: 'center',
-    paddingHorizontal: s(20), // Scaled padding
+    paddingHorizontal: s(20),
     alignItems: 'center',
     backgroundColor: 'transparent',
-    paddingBottom: vs(10), // Added slight bottom padding for safety
+    paddingBottom: vs(10),
   },
-
   halfCircle: {
     position: 'absolute',
-    // We scale the circle dimensions so the curve remains consistent across devices
     width: s(1000),
     height: s(1000),
     borderRadius: s(500),
-    top: -s(780), // Scaled top position to match the circle size
-    // Shadow
+    top: -s(780),
     shadowColor: 'rgba(0, 0, 0, 1)',
     shadowOffset: { width: 0, height: vs(4) },
     shadowOpacity: 1,
     shadowRadius: ms(10),
     elevation: 15,
-    zIndex: -1, // Ensure it stays behind text
+    zIndex: -1,
   },
-
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    justifyContent: 'space-between', // Ensures button and text are separated
+    justifyContent: 'space-between',
   },
-
   textWrapper: {
     flex: 1,
     alignItems: 'flex-start',
-    paddingRight: s(50), // Prevent text from hitting the button
+    paddingRight: s(50),
   },
-
   greetingTitle: {
-    fontSize: ms(30), // Slightly reduced base size for better fit on small screens
+    fontSize: ms(30),
     fontWeight: '900',
     color: 'white',
     textAlign: 'left',
     marginBottom: vs(5),
-    lineHeight: ms(34), // Added line height for better vertical alignment
+    lineHeight: ms(34),
   },
-
   username: {
     color: '#fff',
     textTransform: 'capitalize',
   },
-
   bodyText: {
     fontSize: ms(15),
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'left',
-    lineHeight: ms(20), // Improves readability
+    lineHeight: ms(20),
   },
-
-  // Button Style (Passed to PopButton)
   helpButton: {
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 1)',
-    borderRadius: s(18), // Scaled radius
-    width: s(36), // Scaled width
-    height: s(36), // Scaled height (square aspect ratio)
+    borderRadius: s(18),
+    width: s(36),
+    height: s(36),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: vs(2) },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
   },
-
   helpIcon: {
     width: s(24),
     height: s(24),
