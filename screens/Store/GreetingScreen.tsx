@@ -7,6 +7,7 @@ import {
   Animated,
   Pressable,
   ViewStyle,
+  Dimensions,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {
@@ -15,6 +16,8 @@ import {
   moderateScale as ms,
 } from 'react-native-size-matters';
 import { useUser } from '../../utils/UserContext';
+
+const { width } = Dimensions.get('window');
 
 // --- 1. REUSABLE POP BUTTON COMPONENT (Scale Up Logic) ---
 const PopButton = ({
@@ -104,42 +107,48 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     justifyContent: 'center',
-    paddingHorizontal: ms(20),
+    paddingHorizontal: s(20), // Scaled padding
     alignItems: 'center',
     backgroundColor: 'transparent',
+    paddingBottom: vs(10), // Added slight bottom padding for safety
   },
 
   halfCircle: {
     position: 'absolute',
-    width: 1000,
-    height: 1000,
-    borderRadius: 500,
-    top: -780,
+    // We scale the circle dimensions so the curve remains consistent across devices
+    width: s(1000),
+    height: s(1000),
+    borderRadius: s(500),
+    top: -s(780), // Scaled top position to match the circle size
     // Shadow
     shadowColor: 'rgba(0, 0, 0, 1)',
     shadowOffset: { width: 0, height: vs(4) },
     shadowOpacity: 1,
     shadowRadius: ms(10),
     elevation: 15,
+    zIndex: -1, // Ensure it stays behind text
   },
 
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
+    justifyContent: 'space-between', // Ensures button and text are separated
   },
 
   textWrapper: {
     flex: 1,
     alignItems: 'flex-start',
+    paddingRight: s(50), // Prevent text from hitting the button
   },
 
   greetingTitle: {
-    fontSize: ms(32),
+    fontSize: ms(30), // Slightly reduced base size for better fit on small screens
     fontWeight: '900',
     color: 'white',
     textAlign: 'left',
     marginBottom: vs(5),
+    lineHeight: ms(34), // Added line height for better vertical alignment
   },
 
   username: {
@@ -148,31 +157,30 @@ const styles = StyleSheet.create({
   },
 
   bodyText: {
-    fontSize: ms(16),
+    fontSize: ms(15),
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'left',
-    paddingRight: ms(40),
+    lineHeight: ms(20), // Improves readability
   },
 
   // Button Style (Passed to PopButton)
   helpButton: {
-    padding: ms(5),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 1)',
-    borderRadius: ms(17),
-    width: ms(40),
-    height: ms(40),
+    borderRadius: s(18), // Scaled radius
+    width: s(36), // Scaled width
+    height: s(36), // Scaled height (square aspect ratio)
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: vs(2) },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
   },
 
   helpIcon: {
-    width: ms(28),
-    height: ms(28),
+    width: s(24),
+    height: s(24),
     resizeMode: 'contain',
   },
 });

@@ -6,6 +6,10 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
@@ -23,6 +27,8 @@ import LottieView from 'lottie-react-native';
 
 // 1. IMPORT POP BUTTON
 import PopButton from '../utils/PopButton';
+
+const { width, height } = Dimensions.get('window');
 
 type RootStackParamList = {
   Login: undefined;
@@ -85,7 +91,9 @@ export default function LoginRegister() {
     const elapsedTime = Date.now() - startTime;
     const minimumTime = 2000; // 2 seconds
     if (elapsedTime < minimumTime) {
-      await new Promise(resolve => setTimeout(resolve, minimumTime - elapsedTime));
+      await new Promise(resolve =>
+        setTimeout(resolve, minimumTime - elapsedTime),
+      );
     }
   };
 
@@ -172,7 +180,7 @@ export default function LoginRegister() {
         .maybeSingle();
 
       if (error) throw error;
-      
+
       if (!user) {
         await handleMinimumLoadTime(startTime);
         setLoading(false);
@@ -210,115 +218,148 @@ export default function LoginRegister() {
           </View>
         )}
 
-        <LinearGradient
-          colors={['#340052ff', '#a700b6ff']}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.gradientCard}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1, width: '100%' }}
         >
-          <Text style={styles.title}>Login / Register</Text>
-
-          <TextInput
-            placeholder="Nickname"
-            style={styles.input}
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            placeholderTextColor="rgba(255,255,255,0.7)"
-          />
-
-          <TextInput
-            placeholder="Mobile No. 01XXX"
-            style={styles.input}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            placeholderTextColor="rgba(255,255,255,0.7)"
-          />
-
-          <TextInput
-            placeholder="Password"
-            style={styles.input}
-            value={password}
-            secureTextEntry
-            onChangeText={setPassword}
-            autoCapitalize="none"
-            placeholderTextColor="rgba(255,255,255,0.7)"
-          />
-
-          {/* State */}
-          <View style={styles.dropdownContainer}>
-            <Picker
-              selectedValue={selectedState}
-              onValueChange={v => {
-                setSelectedState(v);
-                if (v !== null) fetchCities(v);
-              }}
-              style={styles.picker}
-              dropdownIconColor="white"
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <LinearGradient
+              colors={['#340052ff', '#a700b6ff']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.gradientCard}
             >
-              <Picker.Item label="Select State" value={null} />
-              {states.map(state => (
-                <Picker.Item
-                  key={state.id}
-                  label={state.name}
-                  value={state.id}
-                />
-              ))}
-            </Picker>
-          </View>
+              <Text style={styles.title}>Login / Register</Text>
 
-          {/* City */}
-          <View style={styles.dropdownContainer}>
-            <Picker
-              selectedValue={selectedCity}
-              onValueChange={v => {
-                setSelectedCity(v);
-                if (v !== null) fetchStores(v);
-              }}
-              enabled={cities.length > 0}
-              style={styles.picker}
-              dropdownIconColor="white"
-            >
-              <Picker.Item label="Select City" value={null} />
-              {cities.map(city => (
-                <Picker.Item key={city.id} label={city.name} value={city.id} />
-              ))}
-            </Picker>
-          </View>
+              <TextInput
+                placeholder="Nickname"
+                style={styles.input}
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+                placeholderTextColor="rgba(255,255,255,0.7)"
+              />
 
-          {/* Store */}
-          <View style={styles.dropdownContainer}>
-            <Picker
-              selectedValue={selectedStore}
-              onValueChange={v => setSelectedStore(v)}
-              enabled={stores.length > 0}
-              style={styles.picker}
-              dropdownIconColor="white"
-            >
-              <Picker.Item label="Select Store" value={null} />
-              {stores.map(store => (
-                <Picker.Item
-                  key={store.id}
-                  label={store.name}
-                  value={store.id}
-                />
-              ))}
-            </Picker>
-          </View>
+              <TextInput
+                placeholder="Mobile No. 01XXX"
+                style={styles.input}
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                placeholderTextColor="rgba(255,255,255,0.7)"
+              />
 
-          <View style={styles.buttonContainer}>
-            {/* PopButton for Login */}
-            <PopButton onPress={handleLogin} style={styles.button}>
-              <Text style={styles.btntxt}>Login</Text>
-            </PopButton>
+              <TextInput
+                placeholder="Password"
+                style={styles.input}
+                value={password}
+                secureTextEntry
+                onChangeText={setPassword}
+                autoCapitalize="none"
+                placeholderTextColor="rgba(255,255,255,0.7)"
+              />
 
-            {/* PopButton for Register */}
-            <PopButton onPress={handleRegister} style={styles.button}>
-              <Text style={styles.btntxt}>Register</Text>
-            </PopButton>
-          </View>
-        </LinearGradient>
+              {/* State */}
+              <View style={styles.dropdownContainer}>
+                <Picker
+                  selectedValue={selectedState}
+                  onValueChange={v => {
+                    setSelectedState(v);
+                    if (v !== null) fetchCities(v);
+                  }}
+                  style={styles.picker}
+                  dropdownIconColor="white"
+                  mode="dropdown" // Better UI on Android
+                >
+                  <Picker.Item
+                    label="Select State"
+                    value={null}
+                    style={{ fontSize: ms(14) }}
+                  />
+                  {states.map(state => (
+                    <Picker.Item
+                      key={state.id}
+                      label={state.name}
+                      value={state.id}
+                      style={{ fontSize: ms(14) }}
+                    />
+                  ))}
+                </Picker>
+              </View>
+
+              {/* City */}
+              <View style={styles.dropdownContainer}>
+                <Picker
+                  selectedValue={selectedCity}
+                  onValueChange={v => {
+                    setSelectedCity(v);
+                    if (v !== null) fetchStores(v);
+                  }}
+                  enabled={cities.length > 0}
+                  style={styles.picker}
+                  dropdownIconColor="white"
+                  mode="dropdown"
+                >
+                  <Picker.Item
+                    label="Select City"
+                    value={null}
+                    style={{ fontSize: ms(14) }}
+                  />
+                  {cities.map(city => (
+                    <Picker.Item
+                      key={city.id}
+                      label={city.name}
+                      value={city.id}
+                      style={{ fontSize: ms(14) }}
+                    />
+                  ))}
+                </Picker>
+              </View>
+
+              {/* Store */}
+              <View style={styles.dropdownContainer}>
+                <Picker
+                  selectedValue={selectedStore}
+                  onValueChange={v => setSelectedStore(v)}
+                  enabled={stores.length > 0}
+                  style={styles.picker}
+                  dropdownIconColor="white"
+                  mode="dropdown"
+                >
+                  <Picker.Item
+                    label="Select Store"
+                    value={null}
+                    style={{ fontSize: ms(14) }}
+                  />
+                  {stores.map(store => (
+                    <Picker.Item
+                      key={store.id}
+                      label={store.name}
+                      value={store.id}
+                      style={{ fontSize: ms(14) }}
+                    />
+                  ))}
+                </Picker>
+              </View>
+
+              <View style={styles.buttonContainer}>
+                {/* PopButton for Login */}
+                <PopButton onPress={handleLogin} style={styles.button}>
+                  <Text style={styles.btntxt}>Login</Text>
+                </PopButton>
+
+                {/* PopButton for Register */}
+                <PopButton onPress={handleRegister} style={styles.button}>
+                  <Text style={styles.btntxt}>Register</Text>
+                </PopButton>
+              </View>
+            </LinearGradient>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ScreenWrapper>
   );
@@ -327,8 +368,12 @@ export default function LoginRegister() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: vs(20), // Adds safety padding on small screens
   },
   fullScreenContainer: {
     position: 'absolute',
@@ -338,21 +383,22 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    zIndex: 10, // Increased zIndex to ensure it covers everything
     backgroundColor: 'white',
   },
   fullScreenAnimation: {
-    width: s(350),
-    height: s(350),
+    width: s(300), // Adjusted to be safer on smaller screens
+    height: s(300),
     backgroundColor: 'white',
   },
   gradientCard: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: s(5),
-    height: vs(500),
+    paddingVertical: vs(30), // Dynamic height based on content
+    paddingHorizontal: s(5),
     width: s(300),
     borderRadius: ms(50),
+    // Removed fixed height to allow card to grow with errors/content
   },
   title: {
     fontSize: ms(26),
@@ -375,19 +421,24 @@ const styles = StyleSheet.create({
     marginBottom: vs(12),
     borderBottomWidth: 0.5,
     borderBottomColor: '#ffffff7e',
+    // Added height constraint for better alignment
+    height: vs(50),
+    justifyContent: 'center',
   },
-  picker: { color: 'rgba(255, 255, 255, 0.7)', fontSize: ms(17) },
+  picker: {
+    color: 'white',
 
-  // --- UPDATED FIXED BUTTON STYLES ---
+    // Note: fontSize in style prop often ignored by Android Picker,
+    // so we added it to Picker.Item as well where applicable
+  },
   button: {
-    // padding: ms(14), // Removed dynamic padding
-    borderRadius: ms(80),
+    borderRadius: ms(22),
     marginTop: vs(12),
     backgroundColor: 'white',
-    width: s(110),   // Fixed Width
-    height: vs(45),  // Fixed Height
-    justifyContent: 'center', // Center text vertically
-    alignItems: 'center',     // Center text horizontally
+    width: s(110),
+    height: vs(45),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   btntxt: {
     color: '#340052ff',
@@ -398,5 +449,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '80%',
+    marginTop: vs(10),
   },
 });

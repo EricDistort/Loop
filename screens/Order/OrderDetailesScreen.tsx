@@ -5,11 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  TouchableOpacity, 
+  TouchableOpacity,
   Linking,
   StatusBar,
   ActivityIndicator,
   Clipboard,
+  Dimensions,
 } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import {
@@ -28,6 +29,8 @@ const animPacked = require('./OrderMedia/Packed.json');
 const animOutForDelivery = require('./OrderMedia/OutForDelivery.json');
 const animDelivered = require('./OrderMedia/Delivered.json');
 const animCancelled = require('./OrderMedia/Cancelled.json');
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type JsonOrderItem = {
   product_id: number;
@@ -68,7 +71,9 @@ export default function OrderDetailScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
 
   // --- COPY BUTTON STATE ---
-  const [copyState, setCopyState] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [copyState, setCopyState] = useState<'idle' | 'loading' | 'success'>(
+    'idle',
+  );
 
   useEffect(() => {
     fetchOrderDetails();
@@ -78,7 +83,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
     try {
       const { data: orderData, error: orderError } = await supabase
         .from('purchases')
-        .select('*, stores(live_location)') 
+        .select('*, stores(live_location)')
         .eq('id', orderId)
         .single();
 
@@ -97,14 +102,18 @@ export default function OrderDetailScreen({ route, navigation }: any) {
 
         if (productsError) throw productsError;
 
-        const mergedItems: DisplayItem[] = currentOrder.products.map(jsonItem => {
-          const details = productsData?.find(p => p.id === jsonItem.product_id);
-          return {
-            quantity: jsonItem.quantity,
-            price: jsonItem.price,
-            productDetails: details,
-          };
-        });
+        const mergedItems: DisplayItem[] = currentOrder.products.map(
+          jsonItem => {
+            const details = productsData?.find(
+              p => p.id === jsonItem.product_id,
+            );
+            return {
+              quantity: jsonItem.quantity,
+              price: jsonItem.price,
+              productDetails: details,
+            };
+          },
+        );
 
         setDisplayItems(mergedItems);
       }
@@ -142,7 +151,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
       setTimeout(() => {
         setCopyState('idle');
       }, 2000);
-    }, 500); 
+    }, 500);
   };
 
   // --- CANCEL LOGIC (Direct execution, no alert) ---
@@ -194,8 +203,8 @@ export default function OrderDetailScreen({ route, navigation }: any) {
   const showCancelButton =
     order?.status === 'Pending' || order?.status === 'Confirmed';
 
-  const showTrackButton = 
-    order?.status?.toLowerCase() === 'out for delivery' || 
+  const showTrackButton =
+    order?.status?.toLowerCase() === 'out for delivery' ||
     order?.status?.toLowerCase() === 'outfordelivery';
 
   if (loading) {
@@ -217,7 +226,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
           autoPlay
           loop
           style={styles.lottieHeader}
-          resizeMode="cover"
+          resizeMode="contain" // Contain ensures full animation visibility
         />
       </View>
 
@@ -245,7 +254,11 @@ export default function OrderDetailScreen({ route, navigation }: any) {
             onPress={handleCancelOrder}
             style={[
               styles.statusBadge,
-              { borderColor: '#ff0000', marginLeft: ms(10), backgroundColor: '#ff0000ff' },
+              {
+                borderColor: '#ff0000',
+                marginLeft: ms(10),
+                backgroundColor: '#ff0000ff',
+              },
             ]}
           >
             <Text style={[styles.statusText, { color: '#ffffffff' }]}>
@@ -260,12 +273,14 @@ export default function OrderDetailScreen({ route, navigation }: any) {
             onPress={handleTrackDelivery}
             style={[
               styles.statusBadge,
-              { borderColor: '#007bff', marginLeft: ms(10), backgroundColor: '#007bff' },
+              {
+                borderColor: '#007bff',
+                marginLeft: ms(10),
+                backgroundColor: '#007bff',
+              },
             ]}
           >
-            <Text style={[styles.statusText, { color: '#ffffff' }]}>
-              Track
-            </Text>
+            <Text style={[styles.statusText, { color: '#ffffff' }]}>Track</Text>
           </PopButton>
         )}
       </View>
@@ -273,13 +288,17 @@ export default function OrderDetailScreen({ route, navigation }: any) {
       {/* 3. Items Section */}
       <View style={styles.section}>
         <View style={styles.itemsScrollContainer}>
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: vs(10) }}
+          >
             {displayItems.map((item, index) => (
               <View key={index} style={styles.card}>
                 <View style={styles.imageContainer}>
                   <Image
                     source={{ uri: item.productDetails?.image_url }}
                     style={styles.itemImage}
+                    resizeMode="cover"
                   />
                 </View>
                 <View style={styles.info}>
@@ -310,20 +329,27 @@ export default function OrderDetailScreen({ route, navigation }: any) {
         <View style={styles.totalRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.orderIdBottom}>Order #{order?.id}</Text>
-            
+
             {/* Copy Button */}
             <PopButton
               onPress={handleCopyOrderId}
               style={[
                 styles.copyButton,
-                copyState === 'success' && { backgroundColor: '#e0ffe0' }, 
+                copyState === 'success' && { backgroundColor: '#e0ffe0' },
               ]}
-              disabled={copyState !== 'idle'} 
+              disabled={copyState !== 'idle'}
             >
               {copyState === 'loading' ? (
                 <ActivityIndicator size="small" color="#666" />
               ) : copyState === 'success' ? (
-                <Text style={[styles.copyButtonText, { color: 'green', fontSize: ms(14) }]}>✓</Text>
+                <Text
+                  style={[
+                    styles.copyButtonText,
+                    { color: 'green', fontSize: ms(14) },
+                  ]}
+                >
+                  ✓
+                </Text>
               ) : (
                 <Text style={styles.copyButtonText}>❐</Text>
               )}
@@ -341,8 +367,6 @@ export default function OrderDetailScreen({ route, navigation }: any) {
 
       {/* 4. Delivery Details */}
       <View style={styles.addressContainer}>
-        <Text style={styles.sectionTitle}>Delivery Details</Text>
-
         <View style={styles.addressRow}>
           <View style={{ flex: 1, marginRight: ms(10) }}>
             <Text style={styles.detailValue}>
@@ -375,8 +399,8 @@ const styles = StyleSheet.create({
   },
   headerImageContainer: {
     width: '100%',
-    height: vs(320),
-    backgroundColor: '#ffffff',
+    height: vs(320), // Reduced slightly to allow more room for content
+    backgroundColor: '#ffffffff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -388,13 +412,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: vs(-10),
+    marginTop: vs(-20), // Pull up slightly closer to animation
     paddingHorizontal: ms(20),
-    marginBottom: vs(10),
+    marginBottom: vs(15),
   },
   statusBadge: {
-    paddingVertical: vs(4),
-    paddingHorizontal: ms(12),
+    paddingVertical: vs(6),
+    paddingHorizontal: ms(14),
     borderRadius: ms(20),
     borderWidth: 1.5,
     backgroundColor: '#fff',
@@ -414,7 +438,9 @@ const styles = StyleSheet.create({
     marginBottom: vs(10),
   },
   itemsScrollContainer: {
+    // Increased height to show more items without scrolling the tiny window
     maxHeight: vs(120),
+    marginBottom: vs(10),
   },
   card: {
     flexDirection: 'row',
@@ -425,7 +451,7 @@ const styles = StyleSheet.create({
     paddingRight: ms(10),
     alignItems: 'center',
     overflow: 'hidden',
-    height: s(60),
+    height: s(60), // Increased slightly for better breathing room
   },
   imageContainer: {
     backgroundColor: '#fff',
@@ -436,28 +462,28 @@ const styles = StyleSheet.create({
     width: s(60),
     height: s(60),
     backgroundColor: '#eee',
-    borderRadius: 20,
+    borderRadius: ms(20), // Scaled radius
   },
   info: {
     flex: 1,
     marginLeft: ms(12),
     justifyContent: 'center',
-    height: s(50),
+    height: s(72),
   },
   name: {
     fontSize: ms(15),
     fontWeight: '900',
-    color: '#333',
+    color: '#562e63ff',
   },
   brandText: {
     fontSize: ms(12),
     fontWeight: '600',
-    color: '#6c008dff',
+    color: '#8f7896ff',
   },
   actionColumn: {
     alignItems: 'flex-end',
     justifyContent: 'center',
-    height: s(50),
+    height: s(72),
     paddingRight: ms(5),
   },
   priceQtyRow: {
@@ -480,9 +506,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: vs(10),
     paddingRight: ms(5),
+    paddingTop: vs(5),
   },
   orderIdBottom: {
-    fontSize: ms(16),
+    fontSize: ms(15),
     fontWeight: 'bold',
     color: '#333',
   },
@@ -490,9 +517,9 @@ const styles = StyleSheet.create({
   copyButton: {
     marginLeft: ms(10),
     backgroundColor: '#f0f0f0',
-    borderRadius: ms(20),
-    width: ms(30), 
-    height: ms(30),
+    borderRadius: ms(15),
+    width: s(30),
+    height: s(30),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -518,10 +545,11 @@ const styles = StyleSheet.create({
   },
   addressContainer: {
     paddingHorizontal: ms(20),
-    paddingTop: vs(20),
+    paddingTop: vs(10),
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     paddingBottom: vs(30),
+    flex: 1, // Fill remaining space
   },
   addressRow: {
     flexDirection: 'row',

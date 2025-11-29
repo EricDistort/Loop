@@ -9,6 +9,7 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { supabase } from '../../utils/supabaseClient';
@@ -22,6 +23,7 @@ import {
 import PopButton from '../../utils/PopButton';
 
 const successAnimation = require('../StoreMedia/Success.json');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type Product = {
   id: number;
@@ -81,7 +83,7 @@ export default function FullCatalog({ route, navigation }: any) {
   }, [user?.id, user?.store_id]);
 
   const categories = useMemo(() => {
-    const allCats = products.map(p => p.category || 'General');
+    const allCats = products.map((p) => p.category || 'General');
     const uniqueCats = [...new Set(allCats)];
     return ['All', ...uniqueCats.sort()];
   }, [products]);
@@ -105,7 +107,7 @@ export default function FullCatalog({ route, navigation }: any) {
     }
   };
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.brand &&
@@ -119,7 +121,7 @@ export default function FullCatalog({ route, navigation }: any) {
   });
 
   const updateLocalQuantity = (productId: number, change: number) => {
-    setItemQuantities(prev => {
+    setItemQuantities((prev) => {
       const currentQty = prev[productId] || 0;
       const newQty = Math.max(0, currentQty + change);
       return { ...prev, [productId]: newQty };
@@ -131,7 +133,7 @@ export default function FullCatalog({ route, navigation }: any) {
     let quantityToAdd = itemQuantities[product.id] || 0;
     if (quantityToAdd === 0) quantityToAdd = 1;
 
-    setItemQuantities(prev => ({ ...prev, [product.id]: 0 }));
+    setItemQuantities((prev) => ({ ...prev, [product.id]: 0 }));
 
     try {
       const { data: existingItem } = await supabase
@@ -168,7 +170,10 @@ export default function FullCatalog({ route, navigation }: any) {
       }, 1500);
     } catch (error: any) {
       Alert.alert('Error', error.message);
-      setItemQuantities(prev => ({ ...prev, [product.id]: quantityToAdd }));
+      setItemQuantities((prev) => ({
+        ...prev,
+        [product.id]: quantityToAdd,
+      }));
     }
   };
 
@@ -183,13 +188,19 @@ export default function FullCatalog({ route, navigation }: any) {
           }
           activeOpacity={0.7}
         >
-          <Image source={{ uri: item.image_url }} style={localStyles.image} />
+          <Image
+            source={{ uri: item.image_url }}
+            style={localStyles.image}
+            resizeMode="cover"
+          />
           <View style={localStyles.info}>
             <Text style={localStyles.name} numberOfLines={1}>
               {item.name}
             </Text>
             {item.brand && (
-              <Text style={localStyles.brandText}>{item.brand}</Text>
+              <Text style={localStyles.brandText} numberOfLines={1}>
+                {item.brand}
+              </Text>
             )}
             <Text style={localStyles.price}>৳{Math.round(item.price)}</Text>
           </View>
@@ -211,7 +222,7 @@ export default function FullCatalog({ route, navigation }: any) {
                 alignItems: 'center',
               }}
             >
-              <Text style={localStyles.addBtnText}>ADD</Text>
+              <Text style={localStyles.addBtnText}>Buy</Text>
             </LinearGradient>
           </PopButton>
 
@@ -271,7 +282,9 @@ export default function FullCatalog({ route, navigation }: any) {
               localStyles.categoryPillUnselected,
             ]}
           >
-            <Text style={[localStyles.categoryText, { color: '#666' }]}>
+            <Text
+              style={[localStyles.categoryText, { color: '#8f7297ff' }]}
+            >
               {cat}
             </Text>
           </View>
@@ -290,7 +303,7 @@ export default function FullCatalog({ route, navigation }: any) {
           <TextInput
             style={localStyles.searchInput}
             placeholder="Search products..."
-            placeholderTextColor="#888"
+            placeholderTextColor="#8f7297ff"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -318,7 +331,6 @@ export default function FullCatalog({ route, navigation }: any) {
       <ScrollView
         contentContainerStyle={localStyles.scrollContent}
         showsVerticalScrollIndicator={false}
-        //stickyHeaderIndices={[0]}
       >
         {/* CATEGORY SELECTOR */}
         <View style={localStyles.categoryContainer}>
@@ -341,7 +353,7 @@ export default function FullCatalog({ route, navigation }: any) {
             </Text>
           </View>
         )}
-        <View style={{ height: 50 }} />
+        <View style={{ height: vs(50) }} />
       </ScrollView>
 
       {/* LOTTIE OVERLAY */}
@@ -364,7 +376,7 @@ const localStyles = StyleSheet.create({
   screenContainer: { flex: 1, backgroundColor: '#fff' },
   searchWrapper: {
     position: 'absolute',
-    top: vs(25),
+    top: vs(25), // Scaled top margin
     left: 0,
     right: 0,
     paddingHorizontal: ms(20),
@@ -376,15 +388,15 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fbf2ffff',
     borderRadius: ms(25),
-    borderWidth: 3,
+    borderWidth: ms(3),
     borderColor: '#ffffff',
     height: vs(45),
     width: '100%',
     paddingHorizontal: ms(15),
     shadowColor: '#5f0077ff',
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: vs(5) },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowRadius: ms(6),
     elevation: 10,
   },
   searchInput: {
@@ -393,6 +405,7 @@ const localStyles = StyleSheet.create({
     fontSize: ms(14),
     fontWeight: '600',
     height: '100%',
+    paddingVertical: 0, // Fix for text alignment on Android
   },
   clearIcon: {
     color: '#888',
@@ -403,15 +416,16 @@ const localStyles = StyleSheet.create({
   },
   headerCartBtn: {
     backgroundColor: '#6c008dff',
-    height: vs(30),
-    width: vs(30),
-    borderRadius: ms(15),
+    height: s(30), // Scaled square
+    width: s(30),
+    borderRadius: s(12),
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: ms(8), // Added spacing
   },
   cartIcon: {
-    width: ms(16),
-    height: ms(16),
+    width: s(16),
+    height: s(16),
     resizeMode: 'contain',
     tintColor: 'white',
   },
@@ -419,9 +433,9 @@ const localStyles = StyleSheet.create({
     position: 'absolute',
     top: -ms(2),
     right: -ms(2),
-    width: ms(12),
-    height: ms(12),
-    borderRadius: ms(6),
+    width: s(12),
+    height: s(12),
+    borderRadius: s(6),
     backgroundColor: '#ff00c8ff',
     borderWidth: 1.5,
     borderColor: 'white',
@@ -429,18 +443,19 @@ const localStyles = StyleSheet.create({
   scrollContent: {
     // Removed horizontal padding so Category Container touches edges
     paddingBottom: vs(20),
-    paddingTop: vs(80),
+    paddingTop: vs(90), // Increased slightly to clear the Search Island
   },
   categoryContainer: {
     // Background color needed for sticky header
     backgroundColor: '#fff',
-    height: vs(50),
+    height: vs(35),
     justifyContent: 'center',
+    marginBottom: vs(10),
   },
   categoryPill: {
     paddingHorizontal: ms(20),
     paddingVertical: vs(8),
-    borderRadius: ms(20),
+    borderRadius: ms(17),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -463,14 +478,13 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#64008b10',
     borderRadius: ms(30),
-    marginBottom: vs(10),
+    marginBottom: vs(12),
     padding: 0,
     paddingRight: ms(10),
     alignItems: 'center',
     overflow: 'hidden',
-    height: s(75),
-    // Margin horizontal replaces scrollview padding
-    marginHorizontal: ms(10),
+    height: s(85), // Increased height for better proportions
+    marginHorizontal: ms(10), // Consistent margins
   },
   clickableArea: {
     flex: 1,
@@ -479,73 +493,82 @@ const localStyles = StyleSheet.create({
     height: '100%',
   },
   image: {
-    width: s(75),
-    height: s(75),
+    width: s(85), // Matches card height
+    height: s(85),
     backgroundColor: '#eee',
-    borderRadius: 30,
+    borderRadius: ms(30),
   },
   info: {
     flex: 1,
-    marginLeft: ms(15),
-    justifyContent: 'space-evenly',
-    height: s(75),
-    paddingVertical: ms(5),
+    marginLeft: ms(12),
+    justifyContent: 'center',
+    height: '100%',
+    paddingVertical: vs(5),
   },
-  name: { fontSize: ms(16), fontWeight: '900', color: '#562e63ff' },
+  name: {
+    fontSize: ms(16),
+    fontWeight: '900',
+    color: '#562e63ff',
+    //marginBottom: vs(2),
+  },
   brandText: {
     fontSize: ms(13),
     fontWeight: '600',
     color: '#8f7896ff',
-    marginTop: vs(-3),
+    marginBottom: vs(4),
   },
   price: {
     fontSize: ms(15),
     color: '#816e86ff',
     fontWeight: '700',
-    marginTop: vs(2),
   },
   actionColumn: {
     width: s(90),
-    height: s(75),
+    height: '100%',
     flexDirection: 'column',
-    justifyContent: 'space-evenly',
+    justifyContent: 'center',
     alignItems: 'center',
     marginLeft: ms(5),
-    paddingVertical: ms(5),
+    gap: vs(6),
   },
   addBtnSmall: {
-    width: s(90),
-    height: s(25),
+    width: s(85),
+    height: vs(28),
     borderRadius: ms(50),
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
     padding: 0,
   },
-  addBtnText: { color: 'white', fontSize: ms(12), fontWeight: '900' },
+  addBtnText: {
+    color: 'white',
+    fontSize: ms(13),
+    fontWeight: '900',
+  },
   horizontalCounter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#34005218',
     borderRadius: ms(50),
-    width: '100%',
-    height: vs(20),
+    width: s(85),
+    height: vs(24),
   },
   counterBtn: {
-    width: s(30),
+    width: s(28),
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
   counterText: {
-    fontSize: ms(15),
+    fontSize: ms(14),
     fontWeight: '900',
     color: '#333',
     textAlign: 'center',
+    marginTop: vs(-2),
   },
   counterNumber: {
-    fontSize: ms(15),
+    fontSize: ms(14),
     fontWeight: '900',
     color: '#333',
     minWidth: s(15),
@@ -553,13 +576,13 @@ const localStyles = StyleSheet.create({
   },
   lottieOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 1)', // Transparent overlay
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 999,
   },
   lottie: {
-    width: ms(350),
-    height: ms(350),
+    width: s(350), // Scaled Lottie
+    height: s(350),
   },
 });

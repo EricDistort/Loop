@@ -219,6 +219,7 @@ export default function ProfileScreen() {
               </PopButton>
             </View>
           </View>
+          <View style={{ height: vs(80) }} />
         </ScrollView>
       </View>
     </View>
@@ -232,14 +233,14 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     width: '100%',
-    paddingTop: vs(40),
-    paddingBottom: vs(20),
+    paddingTop: vs(40), // Safe area for top
+    paddingBottom: vs(25), // Increased bottom padding for the curve
     paddingHorizontal: ms(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomLeftRadius: ms(50),
-    borderBottomRightRadius: ms(50),
+    borderBottomLeftRadius: ms(60), // Smoother curve
+    borderBottomRightRadius: ms(60),
     elevation: 8,
   },
   userInfoSection: {
@@ -250,9 +251,9 @@ const styles = StyleSheet.create({
   },
   // --- INCREASED SIZE ---
   avatarContainer: {
-    width: s(70), // Increased from 50
-    height: s(70), // Increased from 50
-    borderRadius: s(35), // Increased radius
+    width: s(70),
+    height: s(70),
+    borderRadius: s(35),
     backgroundColor: 'rgba(123, 0, 148, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
     marginRight: ms(15),
   },
   avatarText: {
-    fontSize: ms(24), // Increased from 18
+    fontSize: ms(24),
     fontWeight: 'bold',
     color: 'white',
   },
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   usernameText: {
-    fontSize: ms(22), // Increased from 18
+    fontSize: ms(20), // Responsive font size
     fontWeight: 'bold',
     color: 'white',
     textTransform: 'capitalize',
@@ -279,18 +280,18 @@ const styles = StyleSheet.create({
   idRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    //marginTop: vs(4),
+    marginTop: vs(4),
   },
   userIdText: {
-    fontSize: ms(14), // Increased from 12
+    fontSize: ms(13),
     color: 'rgba(255, 255, 255, 0.8)',
   },
   copyBtn: {
     marginLeft: ms(8),
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: ms(40),
-    paddingHorizontal: ms(10),
-    paddingVertical: vs(5),
+    paddingHorizontal: ms(8),
+    paddingVertical: vs(4),
   },
   copyText: {
     color: 'white',
@@ -310,16 +311,22 @@ const styles = StyleSheet.create({
   },
   bodyContainer: {
     flex: 1,
-    marginTop: vs(10),
+    marginTop: vs(15),
   },
   scrollContent: {
-    padding: ms(20),
+    paddingHorizontal: ms(20),
+    paddingBottom: vs(20),
   },
   infoCard: {
-    backgroundColor: '#64008b10',
+    backgroundColor: '#fff', // Changed to white for better contrast
     width: '100%',
     borderRadius: ms(20),
     padding: ms(20),
+    elevation: 2, // Added shadow for depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cardTitle: {
     fontSize: ms(18),
@@ -336,7 +343,7 @@ const styles = StyleSheet.create({
   dataContent: {
     flex: 1,
     flexDirection: 'column',
-    marginRight: ms(10),
+    marginRight: ms(15), // Ensure text doesn't hit button
   },
   subtitle: {
     fontSize: ms(12),
@@ -347,7 +354,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   bodyText: {
-    fontSize: ms(16),
+    fontSize: ms(15),
     color: '#333',
     fontWeight: 'bold',
   },
@@ -355,7 +362,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ms(15),
     paddingVertical: vs(8),
     borderRadius: ms(15),
-    minWidth: s(70),
+    minWidth: s(75), // Minimum width for touch target
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -363,7 +370,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ms(15),
     paddingVertical: vs(8),
     borderRadius: ms(15),
-    minWidth: s(70),
+    minWidth: s(75),
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#00b300',
@@ -373,7 +380,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ms(15),
     paddingVertical: vs(8),
     borderRadius: ms(15),
-    minWidth: s(70),
+    minWidth: s(75),
     alignItems: 'center',
   },
   btnText: {
@@ -383,7 +390,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#64008b10',
+    backgroundColor: '#f0f0f0', // Lighter divider for cleaner look
     marginVertical: vs(15),
   },
 });

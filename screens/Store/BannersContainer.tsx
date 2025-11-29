@@ -30,7 +30,7 @@ export default function BannerCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export default function BannerCarousel() {
         ref={flatListRef}
         data={banners}
         renderItem={renderItem}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => item.id.toString()}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -131,13 +131,13 @@ export default function BannerCarousel() {
 
 const styles = StyleSheet.create({
   container: {
-    //height: vs(200),
+    height: vs(230), // Fixed responsive height ensuring aspect ratio allows image to show
     width: '100%',
     backgroundColor: 'transparent',
-    marginTop: vs(-50),
+    marginTop: vs(-65), // Scaled negative margin
   },
   loadingContainer: {
-    height: vs(200),
+    height: vs(230), // Match container height
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -146,20 +146,16 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: ms(15),
+    paddingHorizontal: ms(15), // Scaled padding
   },
   imageContainer: {
     width: '100%',
-    height: '80%',
-    borderRadius: ms(45),
+    height: '75%', // Occupies 75% of the vs(230)
+    borderRadius: ms(45), // Scaled radius
     overflow: 'hidden',
-    borderWidth: 7,
+    borderWidth: ms(3), // Scaled border width
     borderColor: '#ffffffff',
-    shadowColor: 'rgba(0, 0, 0, 1)',
-    shadowOffset: { width: 0, height: vs(1) },
-    shadowOpacity: 1,
-    shadowRadius: ms(10),
-    elevation: 15,
+ 
   },
   image: {
     width: '100%',

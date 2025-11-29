@@ -9,7 +9,7 @@ import {
   Image,
   TextInput,
   StatusBar,
-  RefreshControl, // 1. Import RefreshControl
+  RefreshControl,
 } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import { useUser } from '../../utils/UserContext';
@@ -19,6 +19,8 @@ import {
   verticalScale as vs,
   moderateScale as ms,
 } from 'react-native-size-matters';
+// 1. Import LottieView
+import LottieView from 'lottie-react-native';
 
 type Order = {
   id: number;
@@ -27,11 +29,15 @@ type Order = {
   created_at: string;
 };
 
+// --- MEDIA IMPORTS ---
 const imgConfirmed = require('./OrderMedia/Confirmed.png');
 const imgPacked = require('./OrderMedia/Packed.png');
 const imgOut = require('./OrderMedia/OutForDelivery.png');
 const imgDelivered = require('./OrderMedia/Delivered.png');
 const imgCancelled = require('./OrderMedia/Cancelled.png');
+
+// 2. REPLACE with your actual local Lottie file path for empty state
+const emptyOrdersAnimation = require('./OrderMedia/Cat.json');
 
 export default function UserOrdersScreen() {
   const { user } = useUser();
@@ -85,11 +91,11 @@ export default function UserOrdersScreen() {
   };
 
   const getStatusImage = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === 'cancelled') return imgCancelled;
-    if (s === 'delivered') return imgDelivered;
-    if (s.includes('out') || s.includes('delivery')) return imgOut;
-    if (s === 'packed') return imgPacked;
+    const sLower = status.toLowerCase();
+    if (sLower === 'cancelled') return imgCancelled;
+    if (sLower === 'delivered') return imgDelivered;
+    if (sLower.includes('out') || sLower.includes('delivery')) return imgOut;
+    if (sLower === 'packed') return imgPacked;
     return imgConfirmed;
   };
 
@@ -99,7 +105,11 @@ export default function UserOrdersScreen() {
       onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
       activeOpacity={0.7}
     >
-      <Image source={getStatusImage(item.status)} style={styles.image} />
+      <Image
+        source={getStatusImage(item.status)}
+        style={styles.image}
+        resizeMode="contain"
+      />
 
       <View style={styles.info}>
         <Text style={styles.name}>Order {item.id}</Text>
@@ -130,38 +140,13 @@ export default function UserOrdersScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      <FlatList
-        data={filteredOrders}
-        keyExtractor={item => item.id.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        // 2. Use explicit RefreshControl component
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            // 3. This pushes the spinner down by 90 vertical units
-            progressViewOffset={vs(90)} 
-            colors={['#6c008dff']} // Optional: Match your brand color
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {searchQuery ? 'No orders match your search.' : 'No orders found.'}
-            </Text>
-          </View>
-        }
-      />
-
       {/* Sticky Search Bar */}
       <View style={styles.searchWrapper}>
         <View style={styles.searchIsland}>
           <TextInput
             style={styles.searchInput}
             placeholder="Search Order ID..."
-            placeholderTextColor="#888"
+            placeholderTextColor="#8f7297ff"
             value={searchQuery}
             onChangeText={setSearchQuery}
             keyboardType="numeric"
@@ -173,6 +158,38 @@ export default function UserOrdersScreen() {
           )}
         </View>
       </View>
+
+      <FlatList
+        data={filteredOrders}
+        keyExtractor={item => item.id.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            progressViewOffset={vs(90)}
+            colors={['#6c008dff']}
+          />
+        }
+        // 3. Updated ListEmptyComponent with LottieView
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <LottieView
+              source={emptyOrdersAnimation}
+              autoPlay
+              loop
+              style={styles.lottieEmpty}
+            />
+            {/* Optional: You can add text below the animation if you want
+            <Text style={styles.emptyText}>
+              {searchQuery ? 'No matching orders found.' : 'You have no orders yet.'}
+            </Text>
+            */}
+          </View>
+        }
+      />
     </View>
   );
 }
@@ -197,27 +214,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fbf2ffff',
     borderRadius: ms(30),
-    borderWidth: 3,
+    borderWidth: ms(3),
     borderColor: '#ffffffff',
     height: vs(45),
     width: '100%',
     paddingHorizontal: ms(15),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: vs(5) },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowRadius: ms(6),
     elevation: 10,
-  },
-  searchIcon: {
-    fontSize: ms(16),
-    marginRight: ms(10),
   },
   searchInput: {
     flex: 1,
-    color: '#fff',
+    color: '#333',
     fontSize: ms(14),
     fontWeight: '600',
     height: '100%',
+    paddingVertical: 0,
   },
   clearIcon: {
     color: '#888',
@@ -229,17 +243,28 @@ const styles = StyleSheet.create({
   // --- LIST STYLES ---
   listContent: {
     paddingHorizontal: ms(10),
-    paddingBottom: vs(20),
-    paddingTop: vs(85), // Vital: Push content down so it starts below the search bar
+    paddingBottom: vs(80),
+    paddingTop: vs(90), // Increased slightly to ensure spacing below search bar
+    flexGrow: 1, // Ensures empty component centers properly when list is empty
   },
+  // 4. Updated Empty Container Styles
   emptyContainer: {
-    padding: ms(20),
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: vs(20),
+    // marginTop removed so it centers vertically in available space
   },
+  // 5. New Lottie Style
+  lottieEmpty: {
+    width: s(380),
+    height: s(380),
+    marginRight: ms(30),
+  },
+  // kept if needed later
   emptyText: {
     color: '#888',
     fontSize: ms(16),
+    marginTop: vs(10),
   },
   // --- CARD STYLES ---
   card: {
@@ -256,7 +281,6 @@ const styles = StyleSheet.create({
     width: s(75),
     height: s(75),
     backgroundColor: '#fff',
-    resizeMode: 'cover',
     borderRadius: ms(30),
   },
   info: {

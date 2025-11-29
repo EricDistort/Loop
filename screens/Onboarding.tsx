@@ -8,31 +8,36 @@ import {
   Dimensions,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import {
+  scale as s,
+  verticalScale as vs,
+  moderateScale as ms,
+} from 'react-native-size-matters';
 import ScreenWrapper from '../utils/ScreenWrapper';
 
 // 1. IMPORT POP BUTTON
 import PopButton from '../utils/PopButton';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const DARK_PURPLE = '#3c005fff';
 
 const slides = [
   {
     id: '1',
     title: 'Shop Anything',
-    desc: 'Jekono Jinish Kinun Apner Kacher Loop Online Store theke.',
+    desc: 'Buy Anything From Anywhere Anytime. Just Login to Loop App',
     image: require('./LoginMedia/shopanywhere.png'),
   },
   {
     id: '2',
     title: 'Fast Delivery',
-    desc: 'Apner Jinish Apner Ghore Pouche Dewa hobe Olpo Shomoye',
+    desc: 'Your Order will be delivered to your doorstep quickly',
     image: require('./LoginMedia/homedelivery.png'),
   },
   {
     id: '3',
     title: 'Cash Payment',
-    desc: 'Jinish hate peye tarpor apni apner mullo porishod korun',
+    desc: 'Pay with cash upon delivery. No online payments needed',
     image: require('./LoginMedia/cashondelivery.png'),
   },
 ];
@@ -81,7 +86,7 @@ export default function OnboardingScreen({ navigation }: any) {
                 <Text style={styles.desc}>{item.desc}</Text>
               </View>
             )}
-            keyExtractor={item => item.id}
+            keyExtractor={(item) => item.id}
             onViewableItemsChanged={onViewableItemsChanged.current}
             viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
           />
@@ -99,14 +104,13 @@ export default function OnboardingScreen({ navigation }: any) {
 
         {/* Buttons Container */}
         <View style={styles.buttonContainer}>
-          
           {/* Continue Button */}
           <PopButton onPress={() => navigation.replace('Login')}>
             <LinearGradient
               colors={['#340052ff', '#8c0099ff']}
               start={{ x: 0, y: 1 }}
               end={{ x: 1, y: 0 }}
-              style={styles.continueBtn} // <--- Manually sized below
+              style={styles.continueBtn}
             >
               <Text style={styles.buttonText}>Continue</Text>
             </LinearGradient>
@@ -118,12 +122,11 @@ export default function OnboardingScreen({ navigation }: any) {
               colors={['#340052ff', '#8c0099ff']}
               start={{ x: 0, y: 1 }}
               end={{ x: 1, y: 0 }}
-              style={styles.skipBtn} // <--- Manually sized below
+              style={styles.skipBtn}
             >
               <Text style={styles.exploreButtonText}>Skip</Text>
             </LinearGradient>
           </PopButton>
-
         </View>
       </View>
     </ScreenWrapper>
@@ -135,67 +138,71 @@ const styles = StyleSheet.create({
   slide: {
     width: width,
     alignItems: 'center',
-    marginTop: 200,
+    justifyContent: 'center', // Helps center content vertically
+    marginTop: vs(100), // Scaled margin top (reduced slightly from 200 to fit smaller screens better)
   },
   image: {
-    width: width * 0.75,
-    height: width * 0.75,
-    marginBottom: 20,
+    width: width * 0.75, // Keeps width dynamic based on screen width
+    height: width * 0.75, // Keeps aspect ratio square relative to width
+    marginBottom: vs(20), // Vertical spacing
   },
   title: {
     color: DARK_PURPLE,
-    fontSize: 26,
+    fontSize: ms(26), // Responsive font size
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: vs(10), // Vertical spacing
   },
   desc: {
-    color: DARK_PURPLE,
-    fontSize: 16,
+    color: '#908497ff',
+    fontSize: ms(16), // Responsive font size
     width: '80%',
     textAlign: 'center',
+    lineHeight: ms(22), // Added for better readability on varied screens
+    fontWeight: '500',
   },
   dots: {
     flexDirection: 'row',
     alignSelf: 'center',
-    marginBottom: 30,
+    marginBottom: vs(30), // Vertical spacing
   },
   dot: {
-    width: 10,
-    height: 10,
+    width: ms(10), // Scaled dot size
+    height: ms(10),
     backgroundColor: '#bebebeff',
-    borderRadius: 5,
-    marginHorizontal: 5,
+    borderRadius: ms(5),
+    marginHorizontal: s(5),
   },
   activeDot: {
     backgroundColor: DARK_PURPLE,
-    width: 12,
-    height: 12,
+    width: ms(12),
+    height: ms(12),
+    borderRadius: ms(6),
   },
-  
+
   // --- Button Styles ---
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between', 
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 35, // Padding for container instead of margin
-    marginBottom: 50,
+    paddingHorizontal: s(35), // Scaled padding
+    marginBottom: vs(50), // Scaled bottom margin
   },
 
-  // 1. CONTINUE BUTTON SIZE (Manual Control)
+  // 1. CONTINUE BUTTON SIZE (Responsive)
   continueBtn: {
-    width: 220,  // <--- Change width here
-    height: 50,  // <--- Change height here
-    borderRadius: 50,
+    width: s(180), // Scaled width
+    height: vs(50), // Scaled height
+    borderRadius: ms(25), // Scaled border radius
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
   },
 
-  // 2. SKIP BUTTON SIZE (Manual Control)
+  // 2. SKIP BUTTON SIZE (Responsive)
   skipBtn: {
-    width: 80,   // <--- Change width here
-    height: 50,  // <--- Change height here
-    borderRadius: 50,
+    width: s(80), // Scaled width
+    height: vs(50), // Scaled height
+    borderRadius: ms(25), // Scaled border radius
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
@@ -205,12 +212,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: ms(18), // Responsive font size
   },
   exploreButtonText: {
     textAlign: 'center',
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: ms(18), // Responsive font size
   },
 });

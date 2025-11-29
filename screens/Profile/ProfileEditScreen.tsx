@@ -72,7 +72,10 @@ export default function ProfileEditScreen() {
 
   const handleUpdate = async () => {
     if (!password.trim()) {
-      return Alert.alert('Verification', 'Please enter your password to confirm changes.');
+      return Alert.alert(
+        'Verification',
+        'Please enter your password to confirm changes.',
+      );
     }
 
     if (password.trim() !== user?.password) {
@@ -80,7 +83,7 @@ export default function ProfileEditScreen() {
     }
 
     if (!username.trim() || !phone.trim()) {
-        return Alert.alert('Error', 'Name and Phone cannot be empty.');
+      return Alert.alert('Error', 'Name and Phone cannot be empty.');
     }
 
     setLoading(true);
@@ -105,11 +108,11 @@ export default function ProfileEditScreen() {
 
       // 3. Address Logic: Only update if all dropdowns selected
       if (selectedState && selectedCity && selectedStore) {
-        const stateObj = states.find(s => s.id === selectedState);
-        const cityObj = cities.find(c => c.id === selectedCity);
-        const storeObj = stores.find(st => st.id === selectedStore);
+        const stateObj = states.find((s) => s.id === selectedState);
+        const cityObj = cities.find((c) => c.id === selectedCity);
+        const storeObj = stores.find((st) => st.id === selectedStore);
         const newAddress = `${stateObj?.name}, ${cityObj?.name}, ${storeObj?.name}`;
-        
+
         updateData.state_id = selectedState;
         updateData.city_id = selectedCity;
         updateData.store_id = selectedStore;
@@ -128,9 +131,8 @@ export default function ProfileEditScreen() {
 
       setUser(data);
       Alert.alert('Success', 'Profile updated successfully!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
+        { text: 'OK', onPress: () => navigation.goBack() },
       ]);
-
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -141,13 +143,16 @@ export default function ProfileEditScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
-      
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        
-          
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.card}>
             {/* PASSWORD VERIFICATION */}
             <View style={styles.inputGroup}>
@@ -161,8 +166,6 @@ export default function ProfileEditScreen() {
                 onChangeText={setPassword}
               />
             </View>
-
-           
 
             {/* PERSONAL INFO */}
             <View style={styles.inputGroup}>
@@ -188,78 +191,115 @@ export default function ProfileEditScreen() {
               />
             </View>
 
-         
-
             {/* ADDRESS SECTION */}
-            <Text style={styles.helperText}>Select all fields to update address</Text>
-            
+            <Text style={styles.helperText}>
+              Select all fields to update address
+            </Text>
+
             <View style={styles.dropdownWrapper}>
-                <View style={styles.pickerContainer}>
+              <View style={styles.pickerContainer}>
                 <Picker
-                    selectedValue={selectedState}
-                    onValueChange={v => {
+                  selectedValue={selectedState}
+                  
+                  onValueChange={(v) => {
                     setSelectedState(v);
                     if (v !== null) fetchCities(v);
-                    }}
-                    style={styles.picker}
+                  }}
+                  style={styles.picker}
+                  dropdownIconColor="black"
+                  mode="dropdown"
                 >
-                    <Picker.Item label="Select State" value={null} />
-                    {states.map(s => (
-                    <Picker.Item key={s.id} label={s.name} value={s.id} />
-                    ))}
+                  <Picker.Item
+                    label="Select State"
+                    value={null}
+                    style={styles.pickerItem}
+                  />
+                  {states.map((s) => (
+                    <Picker.Item
+                      key={s.id}
+                      label={s.name}
+                      value={s.id}
+                      style={styles.pickerItem}
+                    />
+                  ))}
                 </Picker>
-                </View>
+              </View>
 
-                <View style={styles.pickerContainer}>
+              <View style={styles.pickerContainer}>
                 <Picker
-                    selectedValue={selectedCity}
-                    onValueChange={v => {
+                  selectedValue={selectedCity}
+                  onValueChange={(v) => {
                     setSelectedCity(v);
                     if (v !== null) fetchStores(v);
-                    }}
-                    enabled={cities.length > 0}
-                    style={styles.picker}
+                  }}
+                  enabled={cities.length > 0}
+                  style={styles.picker}
+                  dropdownIconColor="black"
+                  mode="dropdown"
                 >
-                    <Picker.Item label="Select City" value={null} />
-                    {cities.map(c => (
-                    <Picker.Item key={c.id} label={c.name} value={c.id} />
-                    ))}
+                  <Picker.Item
+                    label="Select City"
+                    value={null}
+                    style={styles.pickerItem}
+                  />
+                  {cities.map((c) => (
+                    <Picker.Item
+                      key={c.id}
+                      label={c.name}
+                      value={c.id}
+                      style={styles.pickerItem}
+                    />
+                  ))}
                 </Picker>
-                </View>
+              </View>
 
-                <View style={styles.pickerContainer}>
+              <View style={styles.pickerContainer}>
                 <Picker
-                    selectedValue={selectedStore}
-                    onValueChange={v => setSelectedStore(v)}
-                    enabled={stores.length > 0}
-                    style={styles.picker}
+                  selectedValue={selectedStore}
+                  onValueChange={(v) => setSelectedStore(v)}
+                  enabled={stores.length > 0}
+                  style={styles.picker}
+                  dropdownIconColor="black"
+                  mode="dropdown"
                 >
-                    <Picker.Item label="Select Store" value={null} />
-                    {stores.map(st => (
-                    <Picker.Item key={st.id} label={st.name} value={st.id} />
-                    ))}
+                  <Picker.Item
+                    label="Select Store"
+                    value={null}
+                    style={styles.pickerItem}
+                  />
+                  {stores.map((st) => (
+                    <Picker.Item
+                      key={st.id}
+                      label={st.name}
+                      value={st.id}
+                      style={styles.pickerItem}
+                    />
+                  ))}
                 </Picker>
-                </View>
+              </View>
             </View>
 
             {/* FIXED SIZE SUBMIT BUTTON CENTERED */}
             <View style={styles.buttonCenterContainer}>
-                <PopButton onPress={handleUpdate} disabled={loading} style={styles.fixedButton}>
-                    <LinearGradient
-                    colors={['#4c0079ff', '#a200b1ff']}
-                    start={{ x: 0, y: 1 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.submitGradient}
-                    >
-                    <Text style={styles.submitText}>
-                        {loading ? '...' : 'Save Changes'}
-                    </Text>
-                    </LinearGradient>
-                </PopButton>
+              <PopButton
+                onPress={handleUpdate}
+                disabled={loading}
+                style={styles.fixedButton}
+              >
+                <LinearGradient
+                  colors={['#4c0079ff', '#a200b1ff']}
+                  start={{ x: 0, y: 1 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.submitGradient}
+                >
+                  <Text style={styles.submitText}>
+                    {loading ? '...' : 'Save Changes'}
+                  </Text>
+                </LinearGradient>
+              </PopButton>
             </View>
-
           </View>
-        
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -269,85 +309,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffffff',
-    //padding: ms(20),
-    paddingTop: vs(40), // Added top padding since header is removed
-    paddingBottom: vs(50),
+    paddingTop: vs(20), // Reduced slightly as ScrollView handles content
   },
-  content: {
+  scrollContent: {
     padding: ms(20),
-    paddingTop: vs(40), // Added top padding since header is removed
-    paddingBottom: vs(50),
+    paddingBottom: vs(100), // Extra space at bottom so keyboard doesn't hide button
   },
   card: {
-      backgroundColor: 'white',
-      borderRadius: ms(20),
-      padding: ms(20),
-      //elevation: 3,
+    backgroundColor: 'white',
+    borderRadius: ms(20),
+    // Removed padding here so we can control it via ScrollView or per-item
   },
   inputGroup: {
-      marginBottom: vs(15),
+    marginBottom: vs(15),
   },
   label: {
-      fontSize: ms(14),
-      color: '#666',
-      marginBottom: vs(5),
-      fontWeight: '600',
+    fontSize: ms(14),
+    color: '#666',
+    marginBottom: vs(6),
+    fontWeight: '600',
   },
   input: {
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: ms(20),
-      paddingHorizontal: ms(15),
-      paddingVertical: vs(10),
-      fontSize: ms(16),
-      color: '#333',
-      backgroundColor: '#64008b10',
-  },
-  divider: {
-      height: 1,
-      backgroundColor: '#eee',
-      marginVertical: vs(15),
+    borderWidth: 1,
+    borderColor: '#eee', // Softer border
+    borderRadius: ms(20),
+    paddingHorizontal: ms(15),
+    height: vs(50), // Fixed responsive height
+    fontSize: ms(16),
+    color: '#333',
+    backgroundColor: '#64008b10', // Light purple tint
   },
   helperText: {
-      fontSize: ms(12),
-      color: '#999',
-      marginBottom: vs(10),
-     
+    fontSize: ms(12),
+    color: '#999',
+    marginBottom: vs(10),
+    marginTop: vs(10),
+   
   },
   dropdownWrapper: {
-      marginBottom: vs(20),
+    marginBottom: vs(20),
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#eee',
     borderRadius: ms(25),
-    marginBottom: vs(10),
+    marginBottom: vs(12),
     backgroundColor: '#64008b10',
-    justifyContent: 'center',
+    height: vs(50),
+    justifyContent: 'center', // Important for Android Picker alignment
+    overflow: 'hidden',
   },
   picker: {
-    height: vs(50),
+    width: '100%',
+    color: '#333',
+  },
+  pickerItem: {
+    fontSize: ms(14),
     color: '#333',
   },
   // New Styles for Fixed Button
   buttonCenterContainer: {
-      alignItems: 'center',
-      //marginTop: vs(10),
+    alignItems: 'center',
+    //marginTop: vs(10),
   },
   fixedButton: {
-      width: s(170),     // Fixed Width
-      height: vs(45),    // Fixed Height
-      borderRadius: ms(25),
+    width: s(170), // Fixed Width scaled
+    height: vs(45), // Fixed Height scaled
+    borderRadius: ms(25),
+    // Shadow for depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
   submitGradient: {
-      flex: 1,           // Fill the fixed button container
-      borderRadius: ms(25),
-      alignItems: 'center',
-      justifyContent: 'center',
+    flex: 1,
+    borderRadius: ms(25),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitText: {
-      color: 'white',
-      fontSize: ms(14),
-      fontWeight: 'bold',
+    color: 'white',
+    fontSize: ms(16),
+    fontWeight: 'bold',
   },
 });

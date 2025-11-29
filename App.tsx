@@ -51,7 +51,6 @@ function ProfileStackScreen() {
     <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
       <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
       <ProfileStack.Screen name="ProfileEdit" component={ProfileEditScreen} />
-      {/* Add more Profile-related screens here later */}
     </ProfileStack.Navigator>
   );
 }
@@ -60,7 +59,6 @@ function OrderStackScreen() {
   return (
     <OrderStack.Navigator screenOptions={{ headerShown: false }}>
       <OrderStack.Screen name="OrderMain" component={UserOrdersScreen} />
-
       <OrderStack.Screen name="OrderDetail" component={OrderDetailScreen} />
     </OrderStack.Navigator>
   );
@@ -73,21 +71,26 @@ function MainTabs() {
         initialRouteName="Store"
         screenOptions={{
           headerShown: false,
+          tabBarShowLabel: false, // Enabled labels
           tabBarStyle: {
             position: 'absolute',
             bottom: vs(16),
             left: 0,
             right: 0,
-            height: vs(65),
-            backgroundColor: 'rgba(0, 0, 0, 1)',
+            height: vs(70), // Increased slightly to accommodate text + icon comfortable
+            backgroundColor: 'transparent',
             borderRadius: ms(35),
-
             borderTopWidth: 0,
             overflow: 'hidden',
-            //elevation: 5,
             marginHorizontal: '5%',
-            paddingBottom: vs(10),
-            paddingTop: vs(10),
+            paddingBottom: vs(5), // Adjusted for text spacing
+            paddingTop: vs(20),    // Adjusted for text spacing
+            elevation: 5,
+          },
+          tabBarLabelStyle: {
+            fontSize: ms(10), // Responsive font size
+            marginBottom: vs(2), // Spacing from bottom
+            fontWeight: '600',
           },
           tabBarBackground: () => (
             <LinearGradient
@@ -97,17 +100,8 @@ function MainTabs() {
               style={{
                 flex: 1,
                 borderRadius: ms(35),
-                padding: ms(2),
               }}
-            >
-              <View
-                style={{
-                  flex: 1,
-                  backgroundColor: 'rgba(0, 0, 0, 0)',
-                  borderRadius: ms(35),
-                }}
-              />
-            </LinearGradient>
+            />
           ),
           tabBarActiveTintColor: '#ffffffff',
           tabBarInactiveTintColor: '#ffffff77',
@@ -117,11 +111,13 @@ function MainTabs() {
           name="Store"
           component={StoreStackScreen}
           options={{
+            tabBarLabel: 'Store',
             tabBarIcon: ({ focused }) => {
-              const size = focused ? s(29) : s(24);
+              const size = focused ? s(35) : s(29); // Slightly smaller to fit text nicely
               return (
                 <Image
                   source={require('./screens/tabMedia/Store.webp')}
+                  resizeMode="contain"
                   style={{
                     width: size,
                     height: size,
@@ -133,16 +129,18 @@ function MainTabs() {
             },
           }}
         />
-        
+
         <Tab.Screen
           name="Orders"
           component={OrderStackScreen}
           options={{
+            tabBarLabel: 'Orders',
             tabBarIcon: ({ focused }) => {
-              const size = focused ? s(29) : s(24);
+              const size = focused ? s(35) : s(29);
               return (
                 <Image
                   source={require('./screens/tabMedia/Profile.webp')}
+                  resizeMode="contain"
                   style={{
                     width: size,
                     height: size,
@@ -158,11 +156,13 @@ function MainTabs() {
           name="Profile"
           component={ProfileStackScreen}
           options={{
+            tabBarLabel: 'Profile',
             tabBarIcon: ({ focused }) => {
-              const size = focused ? s(29) : s(24);
+              const size = focused ? s(35) : s(29);
               return (
                 <Image
                   source={require('./screens/tabMedia/Order.webp')}
+                  resizeMode="contain"
                   style={{
                     width: size,
                     height: size,

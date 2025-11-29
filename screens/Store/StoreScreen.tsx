@@ -14,23 +14,30 @@ import {
 import { supabase } from '../../utils/supabaseClient';
 import { useUser } from '../../utils/UserContext';
 import ScreenWrapper from '../../utils/ScreenWrapper';
-import { moderateScale as ms, verticalScale as vs, scale as s } from 'react-native-size-matters';
-import PopButton from '../../utils/PopButton'; // Adjust path
+import {
+  moderateScale as ms,
+  verticalScale as vs,
+  scale as s,
+} from 'react-native-size-matters';
+import PopButton from '../../utils/PopButton';
 
 // --- CUSTOM COMPONENT IMPORTS ---
 import GreetingScreen from './GreetingScreen';
 import BannersContainer from './BannersContainer';
-import AllProducts, { Product } from './AllProducts'; 
+import AllProducts, { Product } from './AllProducts';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Responsive Section Heights
 const SECTION_1_HEIGHT = SCREEN_HEIGHT * 0.25;
 const SECTION_2_HEIGHT = SCREEN_HEIGHT * 0.25;
+const OVERLAP_OFFSET = vs(25); // Scaling the negative overlap
 
 export default function StoreProductsScreen({ navigation }: any) {
   const { user } = useUser();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(''); // [NEW] Lifted state
+  const [searchQuery, setSearchQuery] = useState('');
   const [hasItemsInCart, setHasItemsInCart] = useState(false);
 
   // --- ANIMATION VALUE ---
@@ -49,7 +56,7 @@ export default function StoreProductsScreen({ navigation }: any) {
       const { data, error } = await supabase
         .from('store_products')
         .select(
-          `stock_quantity, products ( id, name, brand, description, price, image_url, category )`
+          `stock_quantity, products ( id, name, brand, description, price, image_url, category )`,
         )
         .eq('store_id', user.store_id);
 
@@ -83,7 +90,9 @@ export default function StoreProductsScreen({ navigation }: any) {
         .eq('user_id', user.id)
         .eq('store_id', user.store_id);
       setHasItemsInCart((count || 0) > 0);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // --- ANIMATION INTERPOLATION ---
@@ -117,7 +126,7 @@ export default function StoreProductsScreen({ navigation }: any) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1 }}
           // [NEW] Index 2 is the StickyHeaderContainer
-          stickyHeaderIndices={[2]} 
+          stickyHeaderIndices={[2]}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
             { useNativeDriver: true },
@@ -158,7 +167,7 @@ export default function StoreProductsScreen({ navigation }: any) {
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search products..."
-                placeholderTextColor="#888"
+                placeholderTextColor="#8f7297ff"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -190,17 +199,17 @@ export default function StoreProductsScreen({ navigation }: any) {
               <ActivityIndicator
                 size="large"
                 color="#00c6ff"
-                style={{ marginTop: 50 }}
+                style={{ marginTop: vs(50) }}
               />
             ) : (
               <AllProducts
                 products={products}
                 user={user}
                 navigation={navigation}
-                searchQuery={searchQuery} // Pass props down
+                searchQuery={searchQuery}
               />
             )}
-            <View style={{ height: 100 }} />
+            <View style={{ height: vs(100) }} />
           </View>
         </Animated.ScrollView>
       </View>
@@ -219,38 +228,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
-  
+
   // --- STICKY HEADER STYLES ---
   stickyHeaderContainer: {
-    height: vs(70), // Enough height for the rounded top and spacing
+    height: vs(70),
     width: '100%',
     backgroundColor: '#ffffffff', // White background creates the overlap effect
-    //marginTop: -10, // Pulls it up over the banners
     borderTopLeftRadius: ms(20),
     borderTopRightRadius: ms(20),
     zIndex: 100, // Stays on top
     justifyContent: 'center',
     alignItems: 'center',
-    //paddingTop: vs(10),
     paddingHorizontal: ms(20),
-    top: -25,
-    //overflow: 'hidden',
+    top: -OVERLAP_OFFSET, // Scaled negative top position
   },
   // The Dynamic Island itself
   searchIsland: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fbf2ffff', // Black background
+    backgroundColor: '#fbf2ffff',
     borderRadius: ms(25),
-    borderWidth: 3,
-    borderColor: '#ffffff', // White border
+    borderWidth: ms(3), // Scaled border width
+    borderColor: '#ffffff',
     height: vs(45),
     width: '100%',
     paddingHorizontal: ms(15),
     shadowColor: '#5f0077ff',
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: vs(5) },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowRadius: ms(6),
     elevation: 10,
     alignSelf: 'center',
     top: vs(15),
@@ -261,6 +267,7 @@ const styles = StyleSheet.create({
     fontSize: ms(14),
     fontWeight: '600',
     height: '100%',
+    paddingVertical: 0, // Fix for Android text alignment
   },
   clearIcon: {
     color: '#888',
@@ -270,16 +277,17 @@ const styles = StyleSheet.create({
     padding: ms(5),
   },
   headerCartBtn: {
-    backgroundColor: '#6c008dff', 
-    height: vs(30),
-    width: vs(30),
-    borderRadius: ms(15),
+    backgroundColor: '#6c008dff',
+    height: s(30), // Kept consistent aspect ratio
+    width: s(30),
+    borderRadius: s(12),
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: ms(8), // Added spacing between input/clear and cart
   },
   cartIcon: {
-    width: ms(16),
-    height: ms(16),
+    width: s(16),
+    height: s(16),
     resizeMode: 'contain',
     tintColor: 'white',
   },
@@ -287,10 +295,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -ms(2),
     right: -ms(2),
-    width: ms(12),
-    height: ms(12),
-    borderRadius: ms(6),
-    backgroundColor: '#ff00c8ff', 
+    width: s(12),
+    height: s(12),
+    borderRadius: s(6),
+    backgroundColor: '#ff00c8ff',
     borderWidth: 1.5,
     borderColor: 'white',
   },
@@ -300,10 +308,8 @@ const styles = StyleSheet.create({
     minHeight: SCREEN_HEIGHT,
     backgroundColor: '#ffffffff',
     zIndex: 3,
-    marginTop: -25,
+    marginTop: -OVERLAP_OFFSET, // Scaled negative margin
     borderTopLeftRadius: ms(20),
     borderTopRightRadius: ms(20),
-    //paddingTop: vs(15),
-    // Note: No top radius or margin here because the StickyHeader handles the visual top
   },
 });

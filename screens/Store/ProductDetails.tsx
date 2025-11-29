@@ -7,6 +7,8 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  Dimensions,
+  FlatList,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { supabase } from '../../utils/supabaseClient';
@@ -28,6 +30,8 @@ type Product = {
   description: string;
   price: number;
   image_url: string;
+  secondimage_url?: string;
+  thirdimage_url?: string;
   stock_quantity: number;
   category?: string;
 };
@@ -39,6 +43,12 @@ type User = {
 
 // Replace with actual path
 const successAnimation = require('../StoreMedia/Success.json');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// --- CONSTANTS ---
+const IMAGE_WIDTH = s(300);
+const GAP = s(15); // Adjust gap size here
+const SNAP_INTERVAL = IMAGE_WIDTH + GAP;
 
 export default function ProductDetails({ route, navigation }: any) {
   const { product, user } = route.params as { product: Product; user: User };
@@ -48,6 +58,48 @@ export default function ProductDetails({ route, navigation }: any) {
 
   const [hasItemsInCart, setHasItemsInCart] = useState(false);
   const animationRef = useRef<LottieView>(null);
+
+  // --- SLIDER LOGIC START ---
+  const flatListRef = useRef<FlatList>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Combine images and filter out nulls/undefined/empty strings
+  const slideImages = [
+    product.image_url,
+    product.secondimage_url,
+    product.thirdimage_url,
+  ].filter((url): url is string => !!url && url.trim() !== '');
+
+  useEffect(() => {
+    // Only auto-slide if we have more than 1 image
+    if (slideImages.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex(prevIndex => {
+        const nextIndex = (prevIndex + 1) % slideImages.length;
+
+        flatListRef.current?.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+          viewPosition: 0.5, // Centers the item in the view
+        });
+
+        return nextIndex;
+      });
+    }, 3000); // 3 seconds
+
+    return () => clearInterval(interval);
+  }, [slideImages.length]);
+
+  const onMomentumScrollEnd = (event: any) => {
+    // Calculate index using the total stride (Width + Gap)
+    const newIndex = Math.round(
+      event.nativeEvent.contentOffset.x / SNAP_INTERVAL,
+    );
+    setCurrentIndex(newIndex);
+  };
+  // --- SLIDER LOGIC END ---
 
   const fetchCartStatus = async () => {
     if (!user?.id || !user?.store_id) {
@@ -204,7 +256,7 @@ export default function ProductDetails({ route, navigation }: any) {
             </Text>
           )}
         </View>
-        <Text style={styles.relatedPrice}>৳{item.price.toFixed(2)}</Text>
+        <Text style={styles.relatedPrice}>৳{item.price.toFixed(0)}</Text>
       </View>
     </PopButton>
   );
@@ -212,12 +264,40 @@ export default function ProductDetails({ route, navigation }: any) {
   return (
     <View style={styles.fullScreenContainer}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* 1. LARGE IMAGE */}
+        {/* 1. LARGE IMAGE SLIDER */}
         <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: product.image_url }}
-            style={styles.image}
-            resizeMode="cover"
+          <FlatList
+            ref={flatListRef}
+            data={slideImages}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            // --- GAPPING CONFIGURATION ---
+            // 1. Disable paging to allow custom snap intervals
+            pagingEnabled={false}
+            // 2. Snap to (Image Width + Gap)
+            snapToInterval={SNAP_INTERVAL}
+            snapToAlignment="center"
+            decelerationRate="fast"
+            // 3. Render the gap
+            ItemSeparatorComponent={() => <View style={{ width: GAP }} />}
+            // 4. Update layout calculation to include the gap
+            getItemLayout={(_, index) => ({
+              length: IMAGE_WIDTH,
+              offset: SNAP_INTERVAL * index,
+              index,
+            })}
+            // -----------------------------
+
+            style={styles.flatListSlider}
+            keyExtractor={(item, index) => index.toString()}
+            onMomentumScrollEnd={onMomentumScrollEnd}
+            renderItem={({ item }) => (
+              <Image
+                source={{ uri: item }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            )}
           />
         </View>
 
@@ -240,7 +320,7 @@ export default function ProductDetails({ route, navigation }: any) {
             <View style={styles.actionColumn}>
               {/* Price Row with Pop Cart Button */}
               <View style={styles.priceRow}>
-                <Text style={styles.price}>৳{product.price.toFixed(2)}</Text>
+                <Text style={styles.price}>৳{product.price.toFixed(0)}</Text>
 
                 {/* POP BUTTON: Cart */}
                 <PopButton
@@ -268,7 +348,7 @@ export default function ProductDetails({ route, navigation }: any) {
                     alignItems: 'center',
                   }}
                 >
-                  <Text style={styles.addBtnText}>ADD TO CART</Text>
+                  <Text style={styles.addBtnText}>Buy Now</Text>
                 </LinearGradient>
               </PopButton>
 
@@ -334,28 +414,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffffff',
   },
   scrollContent: {
-    paddingBottom: vs(20),
+    paddingBottom: vs(50),
   },
   imageContainer: {
-    width: vs(300),
-    height: vs(300),
-    backgroundColor: '#ffffff04',
-    justifyContent: 'center',
+    width: '100%',
     alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: vs(10),
-    overflow: 'hidden',
+    marginTop: vs(25),
+    marginBottom: vs(15),
+  },
+  flatListSlider: {
+    // Width must be slightly constrained or flexible.
+    // Since we are centering it, limiting width to just the image helps ensure alignment,
+    // but for gaps to work with snapToInterval properly, flexGrow: 0 is safest.
+    width: IMAGE_WIDTH,
+    height: IMAGE_WIDTH,
+    flexGrow: 0,
+    overflow: 'visible', // Allows the next image (gap) to be seen if desired
   },
   image: {
-    width: '90%',
-    height: '90%',
+    width: IMAGE_WIDTH,
+    height: IMAGE_WIDTH,
     borderRadius: ms(60),
   },
   detailsWrapper: {
     paddingHorizontal: ms(20),
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
     flex: 1,
-    marginBottom: vs(10),
+    //marginBottom: vs(10),
   },
   headerRow: {
     flexDirection: 'row',
@@ -365,27 +450,28 @@ const styles = StyleSheet.create({
   },
   infoColumn: {
     flex: 2,
-    paddingRight: ms(10),
+    paddingRight: ms(15), // Ensure text doesn't hit buttons
     justifyContent: 'flex-start',
   },
   title: {
-    fontSize: ms(24),
+    fontSize: ms(22),
     fontWeight: '900',
     color: '#3b004eff',
-    marginBottom: vs(2),
+    //marginBottom: vs(2),
   },
   brand: {
     fontSize: ms(16),
     fontWeight: '600',
     color: '#8f7297ff ',
+    marginBottom: vs(7),
   },
   description: {
-    fontSize: ms(15),
+    fontSize: ms(14),
     color: '#444',
-    lineHeight: ms(24),
+    lineHeight: ms(22),
   },
   actionColumn: {
-    flex: 1.2,
+    flex: 1.3, // Slightly wider to fit buttons comfortably
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
     gap: vs(5),
@@ -394,29 +480,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: ms(10),
+    gap: ms(8),
   },
   headerCartBtn: {
     backgroundColor: '#6c008dff',
-    height: vs(25),
-    width: vs(25),
-    borderRadius: ms(13),
+    height: s(28),
+    width: s(28),
+    borderRadius: s(12),
     justifyContent: 'center',
     alignItems: 'center',
   },
   cartIcon: {
-    width: ms(16),
-    height: ms(16),
+    width: s(14),
+    height: s(14),
     resizeMode: 'contain',
     tintColor: 'white',
   },
   cartBadge: {
     position: 'absolute',
-    top: -ms(3),
-    right: -ms(3),
-    width: ms(12),
-    height: ms(12),
-    borderRadius: ms(6),
+    top: -ms(2),
+    right: -ms(2),
+    width: s(10),
+    height: s(10),
+    borderRadius: s(5),
     backgroundColor: '#ff00c8ff',
     borderWidth: 1.5,
     borderColor: 'white',
@@ -431,8 +517,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#34005218',
-    borderRadius: ms(14),
-    height: vs(25),
+    borderRadius: ms(15),
+    height: vs(30),
     width: s(120),
   },
   counterBtn: {
@@ -454,10 +540,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addBtn: {
-    // backgroundColor: '#340052ff', // Removed background color
-    height: vs(25),
+    height: vs(30),
     width: s(120),
-    borderRadius: ms(14),
+    borderRadius: ms(15),
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#340052',
@@ -466,47 +551,54 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 5,
     marginVertical: vs(2),
-    overflow: 'hidden', // Required for gradient
-    padding: 0,
+    overflow: 'hidden',
+    //padding: 0,
   },
   addBtnText: {
     color: 'white',
-    fontSize: ms(14),
+    fontSize: ms(15),
     fontWeight: '900',
     letterSpacing: 0.5,
   },
   lottieOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 1)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   lottie: {
-    width: ms(350),
-    height: ms(350),
+    width: s(250),
+    height: s(250),
   },
   relatedProductsContainer: {
-    marginTop: vs(-30),
+    //marginTop: vs(10), // Removed negative margin for layout safety
     backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: vs(200),
+    height: s(220),
+    marginTop: vs(-15),
+    //paddingVertical: vs(10),
+  },
+  relatedHeaderTitle: {
+    fontSize: ms(18),
+    fontWeight: '700',
+    color: '#3b004eff',
+    marginLeft: ms(20),
+    marginBottom: vs(10),
   },
   relatedCard: {
-    width: s(140),
-    marginRight: ms(5),
+    width: s(130),
+    marginRight: ms(10),
     marginLeft: ms(5),
     backgroundColor: '#64008b10',
     borderRadius: ms(15),
     borderTopStartRadius: ms(25),
     borderTopEndRadius: ms(25),
     overflow: 'hidden',
-    paddingBottom: vs(5),
+    paddingBottom: vs(8),
   },
   relatedImage: {
-    width: vs(120),
-    height: vs(120),
+    width: s(130), // Matches card width exactly
+    height: s(130), // Square aspect ratio
     marginBottom: vs(5),
     borderRadius: ms(25),
     alignSelf: 'center',
@@ -514,20 +606,20 @@ const styles = StyleSheet.create({
   relatedInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
+    alignItems: 'flex-start',
     paddingHorizontal: ms(8),
   },
   relatedInfoLeft: {
     flex: 1,
-    marginRight: ms(5),
+    marginRight: ms(2),
   },
   relatedName: {
-    fontSize: ms(12),
+    fontSize: ms(13),
     fontWeight: '700',
     color: '#562e63ff',
   },
   relatedBrand: {
-    fontSize: ms(10),
+    fontSize: ms(11),
     color: '#8f7896ff',
   },
   relatedPrice: {
