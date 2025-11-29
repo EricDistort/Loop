@@ -70,9 +70,9 @@ export default function GreetingsHeader() {
     <View style={styles.container}>
       {/* Half-circle gradient */}
       <LinearGradient
-        colors={['#340052ff', '#a700b6ff']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
+        colors={['#340052ff', '#ea00ffff']}
+        start={{ x: 0, y: 1 }}
+        end={{ x: 0, y: 0 }}
         style={styles.halfCircle}
       />
 

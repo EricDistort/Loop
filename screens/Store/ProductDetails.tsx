@@ -371,13 +371,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: ms(24),
     fontWeight: '900',
-    color: '#333',
+    color: '#3b004eff',
     marginBottom: vs(2),
   },
   brand: {
     fontSize: ms(16),
     fontWeight: '600',
-    color: '#6c008dff',
+    color: '#8f7297ff ',
   },
   description: {
     fontSize: ms(15),
@@ -524,11 +524,11 @@ const styles = StyleSheet.create({
   relatedName: {
     fontSize: ms(12),
     fontWeight: '700',
-    color: '#333',
+    color: '#562e63ff',
   },
   relatedBrand: {
     fontSize: ms(10),
-    color: '#6c008dff',
+    color: '#8f7896ff',
   },
   relatedPrice: {
     fontSize: ms(13),

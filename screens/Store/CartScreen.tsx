@@ -190,7 +190,7 @@ export default function CartScreen({ navigation }: any) {
           total_amount: totalAmount,
           delivery_address: finalDeliveryAddress,
           location: locationUrl,
-          status: 'Confirmed', 
+          status: 'Confirmed',
           products: productsData,
         },
       ]);
@@ -211,9 +211,9 @@ export default function CartScreen({ navigation }: any) {
 
   const renderItem = ({ item }: { item: CartItem }) => (
     <View style={styles.card}>
-      <View style={styles.imageContainer}>
-        <Image source={{ uri: item.products.image_url }} style={styles.image} />
-      </View>
+      {/* 1. Image Section: Fills Height, No Gap */}
+      <Image source={{ uri: item.products.image_url }} style={styles.image} />
+
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>
           {item.products.name}
@@ -230,7 +230,6 @@ export default function CartScreen({ navigation }: any) {
           </Text>
         </View>
         <View style={styles.priceQtyRow}>
-          
           {/* 3. POP ANIMATION: Minus Button */}
           <PopButton
             style={styles.minusBtn}
@@ -246,7 +245,6 @@ export default function CartScreen({ navigation }: any) {
           >
             <Text style={styles.removeBtnText}>Remove</Text>
           </PopButton>
-
         </View>
       </View>
     </View>
@@ -333,10 +331,7 @@ export default function CartScreen({ navigation }: any) {
               </Text>
             </LinearGradient>
           </PopButton>
-          <View style={styles.row}>
-            
-          </View>
-          
+          <View style={styles.row}></View>
         </ScrollView>
       </View>
     </View>
@@ -362,43 +357,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
-    //paddingRight: ms(20),
   },
   lottieEmpty: {
     width: ms(500),
     height: ms(500),
     marginRight: ms(30),
-    //marginBottom: vs(10),
   },
   emptyText: {
     color: '#888',
     fontSize: ms(16),
     fontWeight: '600',
   },
+  // --- CARD STYLES UPDATED ---
   card: {
     flexDirection: 'row',
     backgroundColor: '#64008b10',
-    borderRadius: ms(30),
+    borderRadius: ms(25),
     marginBottom: vs(10),
-    padding: ms(10),
+    padding: 0, // REMOVED PADDING
+    paddingRight: ms(10), // Keep right padding for balance
     alignItems: 'center',
-  },
-  imageContainer: {
-    backgroundColor: '#fff',
-    borderRadius: ms(20),
-    overflow: 'hidden',
+    overflow: 'hidden', // Ensures image stays inside border radius
+    height: s(68), // Fixed height to match image
   },
   image: {
-    width: s(50),
-    height: s(50),
-    borderRadius: ms(13),
+    width: s(68),
+    height: s(68),
+    borderRadius: ms(25), // REMOVED: Parent overflow hidden handles it
     backgroundColor: '#eee',
   },
   info: {
     flex: 1,
-    marginLeft: ms(12),
+    marginLeft: ms(10), // Adjusted margin since padding is gone
     justifyContent: 'center',
-    height: s(50),
+    height: s(75),
+    paddingVertical: ms(5), // Add vertical padding for text
   },
   name: {
     fontSize: ms(15),
@@ -412,9 +405,9 @@ const styles = StyleSheet.create({
   },
   actionColumn: {
     alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    height: s(50),
-    paddingVertical: vs(2),
+    justifyContent: 'center',
+    height: s(75), // Match card height
+    paddingVertical: vs(5), // Add vertical padding
   },
   priceQtyRow: {
     flexDirection: 'row',
@@ -495,13 +488,16 @@ const styles = StyleSheet.create({
     minHeight: vs(40),
   },
   locationBtn: {
-    backgroundColor: '#7d01a328',
+    backgroundColor: '#eec8faff',
     paddingVertical: vs(6),
     paddingHorizontal: ms(12),
     borderRadius: ms(15),
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: ms(5),
+    //borderWidth: 1,
+    //borderColor: '#660096ff',
+    elevation: 2,
   },
   locationBtnText: {
     color: '#9d00e6ff',

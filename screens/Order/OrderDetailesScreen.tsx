@@ -5,8 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  Alert,
-  TouchableOpacity, // Still imported for non-animated areas if any
+  TouchableOpacity, 
   Linking,
   StatusBar,
   ActivityIndicator,
@@ -57,6 +56,9 @@ type OrderDetails = {
   total_amount: number;
   created_at: string;
   products: JsonOrderItem[];
+  stores?: {
+    live_location: string | null;
+  };
 };
 
 export default function OrderDetailScreen({ route, navigation }: any) {
@@ -76,7 +78,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
     try {
       const { data: orderData, error: orderError } = await supabase
         .from('purchases')
-        .select('*')
+        .select('*, stores(live_location)') 
         .eq('id', orderId)
         .single();
 
@@ -107,7 +109,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
         setDisplayItems(mergedItems);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Error fetching order:', error.message);
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -116,9 +118,15 @@ export default function OrderDetailScreen({ route, navigation }: any) {
 
   const openLocation = () => {
     if (order?.location) {
-      Linking.openURL(order.location).catch(err =>
-        Alert.alert('Error', 'Could not open map link'),
-      );
+      Linking.openURL(order.location).catch(() => {}); // Silently fail
+    }
+  };
+
+  // --- LIVE TRACKING LOGIC ---
+  const handleTrackDelivery = () => {
+    const liveLink = order?.stores?.live_location;
+    if (liveLink) {
+      Linking.openURL(liveLink).catch(() => {}); // Silently fail
     }
   };
 
@@ -137,31 +145,22 @@ export default function OrderDetailScreen({ route, navigation }: any) {
     }, 500); 
   };
 
-  const handleCancelOrder = () => {
-    Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
-      { text: 'No', style: 'cancel' },
-      {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const { error } = await supabase
-              .from('purchases')
-              .update({ status: 'Cancelled' })
-              .eq('id', orderId);
+  // --- CANCEL LOGIC (Direct execution, no alert) ---
+  const handleCancelOrder = async () => {
+    try {
+      const { error } = await supabase
+        .from('purchases')
+        .update({ status: 'Cancelled' })
+        .eq('id', orderId);
 
-            if (error) throw error;
+      if (error) throw error;
 
-            if (order) {
-              setOrder({ ...order, status: 'Cancelled' });
-            }
-            Alert.alert('Success', 'Order has been cancelled.');
-          } catch (err: any) {
-            Alert.alert('Error', err.message);
-          }
-        },
-      },
-    ]);
+      if (order) {
+        setOrder({ ...order, status: 'Cancelled' });
+      }
+    } catch (err: any) {
+      console.error('Error cancelling order:', err.message);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -172,6 +171,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
       case 'packed':
         return '#6c008dff';
       case 'out for delivery':
+      case 'outfordelivery':
         return '#007bff';
       case 'delivered':
         return '#00aa00';
@@ -193,6 +193,10 @@ export default function OrderDetailScreen({ route, navigation }: any) {
 
   const showCancelButton =
     order?.status === 'Pending' || order?.status === 'Confirmed';
+
+  const showTrackButton = 
+    order?.status?.toLowerCase() === 'out for delivery' || 
+    order?.status?.toLowerCase() === 'outfordelivery';
 
   if (loading) {
     return (
@@ -217,7 +221,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
         />
       </View>
 
-      {/* 2. Status & Cancel Button Row */}
+      {/* 2. Status & Action Buttons Row */}
       <View style={styles.metaRow}>
         <View
           style={[
@@ -235,17 +239,32 @@ export default function OrderDetailScreen({ route, navigation }: any) {
           </Text>
         </View>
 
+        {/* CANCEL BUTTON (Direct action) */}
         {showCancelButton && (
-          // 2. POP ANIMATION: Cancel Button
           <PopButton
             onPress={handleCancelOrder}
             style={[
               styles.statusBadge,
-              { borderColor: '#cc0000ff', marginLeft: ms(10), backgroundColor: '#ff0000ff'},
+              { borderColor: '#ff0000', marginLeft: ms(10), backgroundColor: '#ff0000ff' },
             ]}
           >
             <Text style={[styles.statusText, { color: '#ffffffff' }]}>
               Cancel
+            </Text>
+          </PopButton>
+        )}
+
+        {/* TRACK BUTTON */}
+        {showTrackButton && (
+          <PopButton
+            onPress={handleTrackDelivery}
+            style={[
+              styles.statusBadge,
+              { borderColor: '#007bff', marginLeft: ms(10), backgroundColor: '#007bff' },
+            ]}
+          >
+            <Text style={[styles.statusText, { color: '#ffffff' }]}>
+              Track
             </Text>
           </PopButton>
         )}
@@ -292,7 +311,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.orderIdBottom}>Order #{order?.id}</Text>
             
-            {/* 3. POP ANIMATION: Copy Button */}
+            {/* Copy Button */}
             <PopButton
               onPress={handleCopyOrderId}
               style={[
@@ -322,7 +341,8 @@ export default function OrderDetailScreen({ route, navigation }: any) {
 
       {/* 4. Delivery Details */}
       <View style={styles.addressContainer}>
-       
+        <Text style={styles.sectionTitle}>Delivery Details</Text>
+
         <View style={styles.addressRow}>
           <View style={{ flex: 1, marginRight: ms(10) }}>
             <Text style={styles.detailValue}>
@@ -331,7 +351,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
           </View>
 
           {order?.location ? (
-            // 4. POP ANIMATION: Location Button
+            // Location Button
             <PopButton style={styles.locationBtn} onPress={openLocation}>
               <Text style={styles.locationBtnText}>Location</Text>
             </PopButton>

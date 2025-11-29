@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between', 
     alignItems: 'center',
-    paddingHorizontal: 40, // Padding for container instead of margin
+    paddingHorizontal: 35, // Padding for container instead of margin
     marginBottom: 50,
   },
 

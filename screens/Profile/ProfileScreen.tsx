@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  Clipboard,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -14,12 +16,15 @@ import {
   moderateScale as ms,
 } from 'react-native-size-matters';
 import LinearGradient from 'react-native-linear-gradient';
+import { supabase } from '../../utils/supabaseClient';
 import { useUser } from '../../utils/UserContext';
 import PopButton from '../../utils/PopButton';
 
 export default function ProfileScreen() {
   const { user, setUser } = useUser();
   const navigation = useNavigation<any>();
+  const [copyLabel, setCopyLabel] = useState('❐');
+  const [applying, setApplying] = useState(false);
 
   const handleLogout = () => {
     setUser(null);
@@ -33,6 +38,14 @@ export default function ProfileScreen() {
     return name ? name.substring(0, 2).toUpperCase() : 'US';
   };
 
+  const handleCopyId = () => {
+    if (user?.id) {
+      Clipboard.setString(user.id.toString());
+      setCopyLabel('✓');
+      setTimeout(() => setCopyLabel('❐'), 2000);
+    }
+  };
+
   const handleDeactivate = () => {
     Alert.alert('Deactivate', 'Are you sure you want to deactivate?', [
       { text: 'Cancel', style: 'cancel' },
@@ -44,11 +57,34 @@ export default function ProfileScreen() {
     navigation.navigate('ProfileEdit');
   };
 
+  const handleApplyLooper = async () => {
+    if (!user) return;
+    setApplying(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ looper: 'applied' })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local context
+      setUser({ ...user, looper: 'applied' });
+      // Alert removed as requested
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const isApplied = user?.looper === 'applied';
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#340052ff" />
 
-      {/* 1. HEADER */}
+      {/* HEADER */}
       <LinearGradient
         colors={['#340052ff', '#a700b6ff']}
         start={{ x: 0, y: 0 }}
@@ -65,7 +101,13 @@ export default function ProfileScreen() {
             <Text style={styles.usernameText} numberOfLines={1}>
               {user?.username || 'Guest User'}
             </Text>
-            <Text style={styles.userIdText}>ID: {user?.id}</Text>
+
+            <View style={styles.idRow}>
+              <Text style={styles.userIdText}>{user?.id}</Text>
+              <PopButton onPress={handleCopyId} style={styles.copyBtn}>
+                <Text style={styles.copyText}>{copyLabel}</Text>
+              </PopButton>
+            </View>
           </View>
         </View>
 
@@ -74,7 +116,7 @@ export default function ProfileScreen() {
         </PopButton>
       </LinearGradient>
 
-      {/* 2. BODY CONTENT */}
+      {/* BODY CONTENT */}
       <View style={styles.bodyContainer}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -83,13 +125,12 @@ export default function ProfileScreen() {
           <View style={styles.infoCard}>
             <Text style={styles.cardTitle}>Contact Information</Text>
 
-            {/* Row 1: Mobile */}
+            {/* Mobile */}
             <View style={styles.dataRow}>
               <View style={styles.dataContent}>
                 <Text style={styles.subtitle}>Mobile Number</Text>
                 <Text style={styles.bodyText}>{user?.phone || 'N/A'}</Text>
               </View>
-              {/* GRADIENT CHANGE BUTTON -> Navigates to Edit Screen */}
               <PopButton onPress={navigateToEdit}>
                 <LinearGradient
                   colors={['#4c0079ff', '#a200b1ff']}
@@ -104,7 +145,7 @@ export default function ProfileScreen() {
 
             <View style={styles.divider} />
 
-            {/* Row 2: Location */}
+            {/* Location */}
             <View style={styles.dataRow}>
               <View style={styles.dataContent}>
                 <Text style={styles.subtitle}>Location</Text>
@@ -112,7 +153,6 @@ export default function ProfileScreen() {
                   {user?.address || 'N/A'}
                 </Text>
               </View>
-              {/* GRADIENT CHANGE BUTTON -> Navigates to Edit Screen */}
               <PopButton onPress={navigateToEdit}>
                 <LinearGradient
                   colors={['#4c0079ff', '#a200b1ff']}
@@ -127,7 +167,7 @@ export default function ProfileScreen() {
 
             <View style={styles.divider} />
 
-            {/* Row 3: Account Status */}
+            {/* Account Status */}
             <View style={styles.dataRow}>
               <View style={styles.dataContent}>
                 <Text style={styles.subtitle}>Account Status</Text>
@@ -142,6 +182,42 @@ export default function ProfileScreen() {
                 <Text style={styles.btnText}>Deactivate</Text>
               </PopButton>
             </View>
+
+            <View style={styles.divider} />
+
+            {/* Apply for Looper Section */}
+            <View style={styles.dataRow}>
+              <View style={styles.dataContent}>
+                <Text style={styles.subtitle}>Apply for Looper</Text>
+                <Text style={styles.bodyText}>Be a Loop store owner</Text>
+              </View>
+
+              <PopButton
+                onPress={handleApplyLooper}
+                disabled={isApplied || applying}
+              >
+                {isApplied ? (
+                  // Applied State (Green)
+                  <View style={styles.appliedBtn}>
+                    <Text style={styles.btnText}>Applied</Text>
+                  </View>
+                ) : (
+                  // Normal Apply State (Gradient)
+                  <LinearGradient
+                    colors={['#340052ff', '#a700b6ff']}
+                    start={{ x: 0, y: 1 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.gradientBtn}
+                  >
+                    {applying ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Text style={styles.btnText}>Apply</Text>
+                    )}
+                  </LinearGradient>
+                )}
+              </PopButton>
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -154,7 +230,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  // --- HEADER STYLES ---
   headerRow: {
     width: '100%',
     paddingTop: vs(40),
@@ -163,8 +238,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomLeftRadius: ms(30),
-    borderBottomRightRadius: ms(30),
+    borderBottomLeftRadius: ms(50),
+    borderBottomRightRadius: ms(50),
     elevation: 8,
   },
   userInfoSection: {
@@ -173,19 +248,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: ms(10),
   },
+  // --- INCREASED SIZE ---
   avatarContainer: {
-    width: s(50),
-    height: s(50),
-    borderRadius: s(25),
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: s(70), // Increased from 50
+    height: s(70), // Increased from 50
+    borderRadius: s(35), // Increased radius
+    backgroundColor: 'rgba(123, 0, 148, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#00c6ff',
-    marginRight: ms(12),
+    borderColor: '#ffffffff',
+    marginRight: ms(15),
   },
   avatarText: {
-    fontSize: ms(18),
+    fontSize: ms(24), // Increased from 18
     fontWeight: 'bold',
     color: 'white',
   },
@@ -195,29 +271,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   usernameText: {
-    fontSize: ms(18),
+    fontSize: ms(22), // Increased from 18
     fontWeight: 'bold',
     color: 'white',
     textTransform: 'capitalize',
   },
+  idRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    //marginTop: vs(4),
+  },
   userIdText: {
-    fontSize: ms(12),
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: vs(2),
+    fontSize: ms(14), // Increased from 12
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  copyBtn: {
+    marginLeft: ms(8),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: ms(40),
+    paddingHorizontal: ms(10),
+    paddingVertical: vs(5),
+  },
+  copyText: {
+    color: 'white',
+    fontSize: ms(10),
+    fontWeight: 'bold',
   },
   logoutBtnSmall: {
     backgroundColor: '#ff3b30',
     paddingHorizontal: ms(12),
     paddingVertical: vs(8),
-    borderRadius: ms(20),
+    borderRadius: ms(15),
   },
   logoutTextSmall: {
     color: 'white',
     fontSize: ms(12),
     fontWeight: 'bold',
   },
-
-  // --- BODY STYLES ---
   bodyContainer: {
     flex: 1,
     marginTop: vs(10),
@@ -226,11 +316,10 @@ const styles = StyleSheet.create({
     padding: ms(20),
   },
   infoCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#64008b10',
     width: '100%',
     borderRadius: ms(20),
     padding: ms(20),
-    elevation: 3,
   },
   cardTitle: {
     fontSize: ms(18),
@@ -262,20 +351,28 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: 'bold',
   },
-  // --- BUTTON STYLES ---
   gradientBtn: {
     paddingHorizontal: ms(15),
     paddingVertical: vs(8),
-    borderRadius: ms(20),
+    borderRadius: ms(15),
     minWidth: s(70),
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  appliedBtn: {
+    paddingHorizontal: ms(15),
+    paddingVertical: vs(8),
+    borderRadius: ms(15),
+    minWidth: s(70),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#00b300',
   },
   deactivateBtn: {
     backgroundColor: '#ff3b30',
     paddingHorizontal: ms(15),
     paddingVertical: vs(8),
-    borderRadius: ms(20),
+    borderRadius: ms(15),
     minWidth: s(70),
     alignItems: 'center',
   },
@@ -286,7 +383,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#64008b10',
     marginVertical: vs(15),
   },
 });

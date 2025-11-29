@@ -91,7 +91,7 @@ function MainTabs() {
           },
           tabBarBackground: () => (
             <LinearGradient
-              colors={['#340052ff', '#8c0099ff']}
+              colors={['#340052ff', '#770081ff']}
               start={{ x: 0, y: 1 }}
               end={{ x: 1, y: 0 }}
               style={{

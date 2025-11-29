@@ -9,6 +9,7 @@ import {
   Image,
   TextInput,
   StatusBar,
+  RefreshControl, // 1. Import RefreshControl
 } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import { useUser } from '../../utils/UserContext';
@@ -129,18 +130,22 @@ export default function UserOrdersScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* 1. LIST COMPONENT
-          We render the list first, but add paddingTop so the first item 
-          isn't hidden behind the floating search bar.
-      */}
       <FlatList
         data={filteredOrders}
         keyExtractor={item => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
+        // 2. Use explicit RefreshControl component
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            // 3. This pushes the spinner down by 90 vertical units
+            progressViewOffset={vs(90)} 
+            colors={['#6c008dff']} // Optional: Match your brand color
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
@@ -150,12 +155,9 @@ export default function UserOrdersScreen() {
         }
       />
 
-      {/* 2. DYNAMIC ISLAND SEARCH BAR (ABSOLUTE POSITION)
-          Placed after FlatList in code, but positioned absolutely on top.
-      */}
+      {/* Sticky Search Bar */}
       <View style={styles.searchWrapper}>
         <View style={styles.searchIsland}>
-          
           <TextInput
             style={styles.searchInput}
             placeholder="Search Order ID..."
@@ -182,25 +184,24 @@ const styles = StyleSheet.create({
   },
   // --- FLOATING SEARCH BAR STYLES ---
   searchWrapper: {
-    position: 'absolute', // This makes it float
-    top: vs(25),          // Distance from top of screen
+    position: 'absolute',
+    top: vs(25),
     left: 0,
     right: 0,
     paddingHorizontal: ms(20),
-    zIndex: 100,          // Ensures it stays above the list
-    alignItems: 'center', // Centers the island horizontally if width wasn't full
+    zIndex: 100,
+    alignItems: 'center',
   },
   searchIsland: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fbf2ffff', // Black Dynamic Island
+    backgroundColor: '#fbf2ffff',
     borderRadius: ms(30),
     borderWidth: 3,
-    borderColor: '#ffffffff',     // White border
+    borderColor: '#ffffffff',
     height: vs(45),
-    width: '100%',              // Full width minus wrapper padding
+    width: '100%',
     paddingHorizontal: ms(15),
-  
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.1,

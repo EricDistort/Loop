@@ -318,7 +318,7 @@ export default function FullCatalog({ route, navigation }: any) {
       <ScrollView
         contentContainerStyle={localStyles.scrollContent}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[0]}
+        //stickyHeaderIndices={[0]}
       >
         {/* CATEGORY SELECTOR */}
         <View style={localStyles.categoryContainer}>
@@ -445,9 +445,9 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryPillUnselected: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#64008b1a',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'rgba(243, 214, 255, 1)',
   },
   categoryText: {
     fontSize: ms(13),
@@ -491,16 +491,16 @@ const localStyles = StyleSheet.create({
     height: s(75),
     paddingVertical: ms(5),
   },
-  name: { fontSize: ms(16), fontWeight: '900', color: '#333' },
+  name: { fontSize: ms(16), fontWeight: '900', color: '#562e63ff' },
   brandText: {
     fontSize: ms(13),
     fontWeight: '600',
-    color: '#6c008dff',
+    color: '#8f7896ff',
     marginTop: vs(-3),
   },
   price: {
     fontSize: ms(15),
-    color: '#31313181',
+    color: '#816e86ff',
     fontWeight: '700',
     marginTop: vs(2),
   },
