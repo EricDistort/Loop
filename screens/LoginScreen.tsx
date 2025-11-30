@@ -86,15 +86,12 @@ export default function LoginRegister() {
     return Math.floor(1000000000 + Math.random() * 9000000000);
   };
 
-  // Helper to ensure minimum loading time
-  const handleMinimumLoadTime = async (startTime: number) => {
-    const elapsedTime = Date.now() - startTime;
-    const minimumTime = 2000; // 2 seconds
-    if (elapsedTime < minimumTime) {
-      await new Promise(resolve =>
-        setTimeout(resolve, minimumTime - elapsedTime),
-      );
-    }
+  // --- NEW HELPER: FORCE 5 SECOND WAIT ---
+  const playSuccessAnimation = async () => {
+    // 1. Show the Lottie Animation
+    setLoading(true);
+    // 2. Wait strictly for 5 seconds
+    await new Promise(resolve => setTimeout(resolve, 5000));
   };
 
   // REGISTER
@@ -109,8 +106,8 @@ export default function LoginRegister() {
     )
       return Alert.alert('Fill all fields');
 
+    // Start showing loading spinner immediately for API call
     setLoading(true);
-    const startTime = Date.now();
 
     try {
       // Check if phone number already exists
@@ -121,7 +118,6 @@ export default function LoginRegister() {
         .maybeSingle();
 
       if (existingPhone) {
-        await handleMinimumLoadTime(startTime);
         setLoading(false);
         return Alert.alert('Mobile number already registered');
       }
@@ -153,12 +149,16 @@ export default function LoginRegister() {
 
       if (error) throw error;
 
-      await handleMinimumLoadTime(startTime);
-      setLoading(false);
+      // --- SUCCESS: PLAY ANIMATION FOR 5 SECONDS ---
+      // We are already loading, but let's ensure the 5s timer runs now
+      // Since API is done, we just wait to let animation play
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
       setUser(insertedUser);
+      // Animation finishes, screen switches
+      setLoading(false);
       navigation.replace('Main');
     } catch (e: any) {
-      await handleMinimumLoadTime(startTime);
       setLoading(false);
       Alert.alert('Registration Error', e.message);
     }
@@ -170,7 +170,6 @@ export default function LoginRegister() {
       return Alert.alert('Fill all fields');
 
     setLoading(true);
-    const startTime = Date.now();
 
     try {
       const { data: user, error } = await supabase
@@ -182,23 +181,23 @@ export default function LoginRegister() {
       if (error) throw error;
 
       if (!user) {
-        await handleMinimumLoadTime(startTime);
         setLoading(false);
         return Alert.alert('Mobile number not registered');
       }
 
       if (user.password === password.trim()) {
-        await handleMinimumLoadTime(startTime);
-        setLoading(false);
+        // --- SUCCESS: PLAY ANIMATION FOR 5 SECONDS ---
+        // API check passed. Wait 5s for visual effect.
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
         setUser(user);
+        setLoading(false);
         navigation.replace('Main');
       } else {
-        await handleMinimumLoadTime(startTime);
         setLoading(false);
         Alert.alert('Invalid password');
       }
     } catch (e: any) {
-      await handleMinimumLoadTime(startTime);
       setLoading(false);
       Alert.alert('Login Error', e.message);
     }
@@ -254,7 +253,7 @@ export default function LoginRegister() {
               />
 
               <TextInput
-                placeholder="Password"
+                placeholder="Create Password"
                 style={styles.input}
                 value={password}
                 secureTextEntry
@@ -276,7 +275,7 @@ export default function LoginRegister() {
                   mode="dropdown" // Better UI on Android
                 >
                   <Picker.Item
-                    label="Select State"
+                    label="Select Zila"
                     value={null}
                     style={{ fontSize: ms(14) }}
                   />
@@ -305,7 +304,7 @@ export default function LoginRegister() {
                   mode="dropdown"
                 >
                   <Picker.Item
-                    label="Select City"
+                    label="Select Upozila"
                     value={null}
                     style={{ fontSize: ms(14) }}
                   />
@@ -331,7 +330,7 @@ export default function LoginRegister() {
                   mode="dropdown"
                 >
                   <Picker.Item
-                    label="Select Store"
+                    label="Select Area"
                     value={null}
                     style={{ fontSize: ms(14) }}
                   />

@@ -124,11 +124,9 @@ export default function ProductDetails({ route, navigation }: any) {
   useEffect(() => {
     fetchCartStatus();
     const fetchRelatedProducts = async () => {
-      if (!user?.store_id) return;
-      const storeIdInt = parseInt(user.store_id, 10);
-      if (isNaN(storeIdInt)) return;
-
+      // 1. Determine Category (from params or fetch if missing)
       let categoryToSearch = product.category;
+
       if (!categoryToSearch) {
         try {
           const { data: prodData, error: prodError } = await supabase
@@ -148,42 +146,27 @@ export default function ProductDetails({ route, navigation }: any) {
       if (!categoryToSearch) return;
 
       try {
+        // 2. CHANGED: Query 'products' table directly
         const { data, error } = await supabase
-          .from('store_products')
-          .select(
-            `
-            stock_quantity,
-            products!inner ( * ) 
-          `,
-          )
-          .eq('store_id', storeIdInt)
-          .eq('products.category', categoryToSearch)
-          .neq('products.id', product.id)
+          .from('products')
+          .select('*')
+          .eq('category', categoryToSearch)
+          .neq('id', product.id) // Exclude current product
           .limit(10);
 
         if (error) throw error;
 
-        const formattedProducts = data
-          .map((item: any) => {
-            const prod = item.products;
-            if (prod) {
-              return {
-                ...prod,
-                stock_quantity: item.stock_quantity,
-              };
-            }
-            return null;
-          })
-          .filter(item => item !== null);
-
-        setRelatedProducts(formattedProducts as Product[]);
+        // Direct assignment since we are fetching products directly
+        if (data) {
+          setRelatedProducts(data as Product[]);
+        }
       } catch (error: any) {
         console.error('Error fetching related products:', error.message);
       }
     };
 
     fetchRelatedProducts();
-  }, [user?.store_id, product.id, product.category]);
+  }, [product.id, product.category]);
 
   const updateQuantity = (change: number) => {
     setQuantity(prev => Math.max(0, prev + change));
